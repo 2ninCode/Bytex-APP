@@ -215,6 +215,12 @@ export default function App() {
         // Only show if it matches current user or is for everyone
         if (!notif.targetEmployeeId || notif.targetEmployeeId === currentUser.id) {
           setNotifications(prev => [notif, ...prev]);
+          
+          // Play sound if enabled
+          if (soundEnabled) {
+            const audio = new Audio('/notification.mp3');
+            audio.play().catch(e => console.error("Error playing sound:", e));
+          }
         }
       })
       .subscribe();
@@ -277,7 +283,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => {}} 
+            onClick={() => setCurrentView('settings')} 
             className="size-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
           >
             <Bell className="size-6 transition-transform group-hover:rotate-12" />
