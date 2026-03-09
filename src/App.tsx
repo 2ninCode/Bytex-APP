@@ -39,25 +39,28 @@ export default function App() {
   
   const lowStockThreshold = 5; // Simplified for now, can be moved to settings state
   
-  // URL Routing for Tracking Link
+  // Consolidated Mount Logic: Routing & Auth
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const trackId = params.get('track');
+    
+    // 1. Check for tracking link first
     if (trackId) {
       setCurrentView('status_tracker');
       setSelectedOrderId(trackId);
+      return; // Don't proceed to auto-login if tracking
     }
-  }, []);
 
-  // Auth check
-  useEffect(() => {
+    // 2. Otherwise handle auto-login
     const saved = localStorage.getItem('bytex_remember');
-    if (saved && currentView !== 'status_tracker') {
+    if (saved) {
       try {
         const emp = JSON.parse(saved);
         setCurrentUser(emp);
         setCurrentView('dashboard');
-      } catch (e) { localStorage.removeItem('bytex_remember'); }
+      } catch (e) { 
+        localStorage.removeItem('bytex_remember'); 
+      }
     }
   }, []);
 

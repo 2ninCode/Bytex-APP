@@ -26,8 +26,16 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
         .eq('id', id.trim())
         .single();
 
-      if (dbErr || !data) {
-        setError('Ordem não encontrada. Verifique o código.');
+      if (dbErr) {
+        if (dbErr.code === 'PGRST116') {
+          setError('Ordem não encontrada. Verifique o código enviado pelo técnico.');
+        } else {
+          setError(`Erro de acesso: Certifique-se de que as políticas de segurança (RLS) foram configuradas no Supabase.`);
+          console.error('Supabase Error:', dbErr);
+        }
+        setOrder(null);
+      } else if (!data) {
+        setError('Ordem não encontrada.');
         setOrder(null);
       } else {
         setOrder({
