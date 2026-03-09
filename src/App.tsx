@@ -864,7 +864,7 @@ const OrderView = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold truncate">{order.customerName}</h3>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">#{order.id.slice(-4)}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">#{order.id}</span>
                   </div>
                   <p className="text-xs text-slate-500 truncate">{order.device} • {order.problem}</p>
                 </div>
@@ -1404,7 +1404,7 @@ const ServiceHistoryModal = ({ orders, onClose }: { orders: Order[], onClose: ()
                       <p className="text-xs text-slate-400 truncate mt-0.5">{o.problem}</p>
                       <div className="flex items-center gap-2 mt-2">
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-semibold">Finalizado</span>
-                        <span className="text-[10px] text-slate-400 font-mono">#{o.id.slice(-6)}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">#{o.id}</span>
                       </div>
                     </div>
                   </div>
@@ -1995,6 +1995,14 @@ export default function App() {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
+  // Helper to generate a unique 6-character alphanumeric order code
+  const generateOrderCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) i === 0 ? code += chars.slice(0, 26).charAt(Math.floor(Math.random() * 26)) : code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return `OS-${code}`;
+  };
+
   // --- Order Actions ---
   const handleSaveOrder = async (data: Partial<Order>) => {
     if (editingOrder) {
@@ -2010,7 +2018,7 @@ export default function App() {
       playNotificationSound(soundEnabled);
     } else {
       const newOrder: Order = {
-        id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: generateOrderCode(),
         customerName: data.customerName || 'Cliente Avulso',
         customerEmail: data.customerEmail || '',
         customerPhone: data.customerPhone || '',
@@ -2027,7 +2035,7 @@ export default function App() {
         problem: newOrder.problem, value: newOrder.value, status: newOrder.status, created_at: newOrder.createdAt,
       });
       setOrders(prev => [newOrder, ...prev]);
-      const n: Notification = { id: Date.now().toString(), title: 'Novo Pedido', message: `Pedido criado para ${newOrder.customerName}.`, type: 'success', timestamp: new Date() };
+      const n: Notification = { id: Date.now().toString(), title: 'Novo Pedido', message: `Pedido ${newOrder.id} criado para ${newOrder.customerName}.`, type: 'success', timestamp: new Date() };
       setNotifications(prev => [n, ...prev]);
       playNotificationSound(soundEnabled);
     }
@@ -2054,7 +2062,7 @@ export default function App() {
 
   const handleCalculatorFinish = async (value: number, clientData: { name: string; device: string; problem: string }) => {
     const newOrder: Order = {
-      id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: generateOrderCode(),
       customerName: clientData.name || 'Cliente Avulso',
       customerEmail: '', customerPhone: '',
       device: clientData.device || 'Dispositivo Orçado',
