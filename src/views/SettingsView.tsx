@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { CreditCard, BarChart3, CheckCircle2, User, ShieldCheck, Moon, Bell, Globe, Info, LogOut, Crown, Shield, Edit2, Users, Send, ChevronRight, HelpCircle } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
-import { cn } from '../ui/utils';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { cn } from '../components/ui/utils';
 import { Employee, Order, Notification, ServicePrice } from '../types';
 import { PriceTableModal } from '../components/modals/PriceTableModal';
 import { SalesReportModal } from '../components/modals/SalesReportModal';

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Calculator, Cpu, Router, Terminal, Package, X } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { cn } from '../ui/utils';
+import { Button } from '../components/ui/Button';
+import { cn } from '../components/ui/utils';
 import { ServicePrice } from '../types';
 
 export const CalculatorView = ({ onAddOrder, prices }: { 

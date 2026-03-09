@@ -1,8 +1,8 @@
 import React from 'react';
 import { Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check, RefreshCw, Box, User, ArrowUpRight } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
-import { cn } from '../ui/utils';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { cn } from '../components/ui/utils';
 import { Order, OrderStatus, Employee } from '../types';
 
 export const OrdersView = ({
@@ -212,13 +212,19 @@ export const OrdersView = ({
         </Card>
       </div>
 
-      <div className="pt-2">
+      <div className="pt-2 flex gap-2">
          <Button variant="ghost" onClick={() => {
            const url = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
            navigator.clipboard.writeText(url);
            alert('Link de rastreio copiado!');
-         }} className="w-full border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary">
-           <ArrowUpRight className="w-4 h-4" /> Copiar Link de Rastreio para Cliente
+         }} className="flex-1 border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary">
+           <ArrowUpRight className="w-4 h-4 mr-2" /> Copiar Link
+         </Button>
+         <Button variant="secondary" onClick={() => {
+           const url = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
+           window.open(url, '_blank');
+         }} className="flex-1">
+           Visualizar Rastreio
          </Button>
       </div>
 

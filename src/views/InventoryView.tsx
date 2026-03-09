@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Plus, Cpu, Database, Router, Cable, FlaskConical, Package, Edit2, Trash2 } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
-import { cn } from '../ui/utils';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { cn } from '../components/ui/utils';
 import { InventoryItem, Employee } from '../types';
 import { InventoryItemModal } from '../components/modals/InventoryItemModal';
 import { supabase } from '../lib/supabase';
