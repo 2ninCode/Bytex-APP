@@ -1865,20 +1865,7 @@ export default function App() {
   }, []);
 
   // --- Orders State ---
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: 'ORD-8492',
-      customerName: 'João Silva',
-      customerEmail: 'joao.silva@email.com',
-      customerPhone: '(11) 98765-4321',
-      device: 'MacBook Pro M1 2020',
-      serialNumber: 'C02XG123Q05N',
-      problem: 'Superaquecimento',
-      value: 800,
-      status: 'in_progress',
-      createdAt: new Date().toISOString()
-    }
-  ]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
