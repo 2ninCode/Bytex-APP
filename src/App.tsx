@@ -1145,51 +1145,31 @@ const OrderForm = ({
   );
 };
 
-const CalculatorView = ({ onAddOrder }: { onAddOrder: (value: number, clientData: { name: string; device: string; problem: string }) => void }) => {
+const CalculatorView = ({ onAddOrder, prices }: { 
+  onAddOrder: (value: number, clientData: { name: string; device: string; problem: string }) => void,
+  prices: { id: string, category: string, name: string, price: number }[]
+}) => {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState('Hardware');
 
-  const services = [
-    {
-      title: 'Hardware', label: 'Hardware / Manutenção', icon: Cpu, items: [
-        { id: 'h1', name: 'Limpeza preventiva (pó e oxidação)', price: 150 },
-        { id: 'h2', name: 'Troca de tela de notebook', price: 450 },
-        { id: 'h3', name: 'Upgrade de RAM ou SSD', price: 200 },
-        { id: 'h4', name: 'Troca de bateria', price: 220 },
-        { id: 'h5', name: 'Reparo de conector de carga', price: 180 },
-        { id: 'h6', name: 'Substituição de teclado / touchpad', price: 280 },
-        { id: 'h7', name: 'Reparo de placa-mãe (diagnóstico)', price: 350 },
-        { id: 'h8', name: 'Instalação de cooler / pasta térmica', price: 120 },
-        { id: 'h9', name: 'Troca de fonte de alimentação', price: 160 },
-      ]
-    },
-    {
-      title: 'Redes', label: 'Redes e Conectividade', icon: Router, items: [
-        { id: 'r1', name: 'Configuração de roteador Wi-Fi', price: 120 },
-        { id: 'r2', name: 'Cabeamento estruturado (por ponto)', price: 80 },
-        { id: 'r3', name: 'Instalação de repetidor / mesh', price: 100 },
-        { id: 'r4', name: 'Configuração de firewall / VPN', price: 200 },
-        { id: 'r5', name: 'Instalação de switch gerenciável', price: 150 },
-        { id: 'r6', name: 'Configuração de VLAN', price: 180 },
-        { id: 'r7', name: 'Diagnóstico de lentidão de rede', price: 90 },
-        { id: 'r8', name: 'Instalação de câmeras IP / CFTV', price: 250 },
-        { id: 'r9', name: 'Configuração de servidor NAS', price: 220 },
-      ]
-    },
-    {
-      title: 'Software', label: 'Software e Sistemas', icon: Terminal, items: [
-        { id: 's1', name: 'Formatação com Backup', price: 180 },
-        { id: 's2', name: 'Remoção de vírus / malware', price: 90 },
-        { id: 's3', name: 'Instalação Pacote Office / Windows', price: 110 },
-        { id: 's4', name: 'Configuração de e-mail corporativo', price: 100 },
-        { id: 's5', name: 'Migração de dados / clonagem de HD', price: 160 },
-        { id: 's6', name: 'Instalação e config. de ERP/CRM', price: 300 },
-        { id: 's7', name: 'Configuração de backup automatizado', price: 140 },
-        { id: 's8', name: 'Otimização de desempenho do sistema', price: 80 },
-        { id: 's9', name: 'Instalação de antivírus corporativo', price: 120 },
-      ]
-    },
-  ];
+  const ICON_MAP_LOCAL: Record<string, any> = { 'Hardware': Cpu, 'Redes': Router, 'Software': Terminal };
+
+  const categories = Array.from(new Set(prices.map(p => p.category)));
+  const services = categories.map(cat => ({
+    title: cat,
+    label: cat === 'Hardware' ? 'Hardware / Manutenção' : cat === 'Redes' ? 'Redes e Conectividade' : cat === 'Software' ? 'Software e Sistemas' : cat,
+    icon: ICON_MAP_LOCAL[cat] || Package,
+    items: prices.filter(p => p.category === cat).map(p => ({ id: p.id, name: p.name, price: p.price }))
+  }));
+
+  if (prices.length === 0) {
+    return (
+      <div className="p-10 text-center space-y-4">
+        <Calculator className="w-12 h-12 mx-auto text-slate-300 opacity-50" />
+        <p className="text-slate-500 font-medium">Carregando tabela de preços...</p>
+      </div>
+    );
+  }
 
   const toggleItem = (id: string) => {
     setSelectedItems(prev => ({ ...prev, [id]: !prev[id] }));
@@ -1682,25 +1662,21 @@ const SendNotificationModal = ({ employees, onClose, onSend }: { employees: Empl
   );
 };
 
-const SettingsView = ({ currentUser, employees, onRefreshEmployees, onSendNotification, onLogout, darkMode, onToggleDark, soundEnabled, onToggleSound, orders, lowStockThreshold, onChangeLowStock }: {
+const SettingsView = ({ currentUser, employees, onRefreshEmployees, onSendNotification, onLogout, darkMode, onToggleDark, soundEnabled, onToggleSound, orders, lowStockThreshold, onChangeLowStock, servicePrices, onSavePrice }: {
   currentUser: Employee, employees: Employee[], onRefreshEmployees: () => void, onSendNotification: (n: Notification) => void,
   onLogout: () => void, darkMode: boolean, onToggleDark: () => void,
   soundEnabled: boolean, onToggleSound: () => void, orders: Order[],
-  lowStockThreshold: number, onChangeLowStock: (v: number) => void
+  lowStockThreshold: number, onChangeLowStock: (v: number) => void,
+  servicePrices: { id: string, category: string, name: string, price: number }[],
+  onSavePrice: (id: string, price: number) => void
 }) => {
   const [showPriceTable, setShowPriceTable] = useState(false);
   const [showSalesReport, setShowSalesReport] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
-  const [servicePrices, setServicePrices] = useState<{ id: string, category: string, name: string, price: number }[]>([]);
-  useEffect(() => {
-    if (!supabase) return;
-    supabase.from('service_prices').select('*').order('id').then(({ data }) => { if (data) setServicePrices(data); });
-  }, []);
-  const handleSavePrice = async (id: string, price: number) => {
-    if (supabase) await supabase.from('service_prices').update({ price }).eq('id', id);
-    setServicePrices(prev => prev.map(p => p.id === id ? { ...p, price } : p));
+  const handleSavePriceLocal = async (id: string, price: number) => {
+    onSavePrice(id, price);
   };
   const baseSections: any[] = [
     {
@@ -1751,7 +1727,7 @@ const SettingsView = ({ currentUser, employees, onRefreshEmployees, onSendNotifi
   })();
   return (
     <>
-      {showPriceTable && <PriceTableModal prices={servicePrices} onSave={handleSavePrice} onClose={() => setShowPriceTable(false)} />}
+      {showPriceTable && <PriceTableModal prices={servicePrices} onSave={handleSavePriceLocal} onClose={() => setShowPriceTable(false)} />}
       {showSalesReport && <SalesReportModal orders={orders} onClose={() => setShowSalesReport(false)} />}
       {showHistory && <ServiceHistoryModal orders={orders} onClose={() => setShowHistory(false)} />}
       {showEmployeeModal && <EmployeeManagementModal employees={employees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
@@ -1860,6 +1836,11 @@ export default function App() {
     })));
   };
 
+  const handleSavePrice = async (id: string, price: number) => {
+    if (supabase) await supabase.from('service_prices').update({ price }).eq('id', id);
+    setServicePrices(prev => prev.map(p => p.id === id ? { ...p, price } : p));
+  };
+
   useEffect(() => { fetchEmployees(); }, []);
 
   // Auto-login from remember me
@@ -1878,7 +1859,8 @@ export default function App() {
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState<number>(() => parseInt(localStorage.getItem('lowStockThreshold') || '5'));
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(INITIAL_ITEMS);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [servicePrices, setServicePrices] = useState<{ id: string, category: string, name: string, price: number }[]>([]);
 
   // Persist lowStockThreshold
   useEffect(() => { localStorage.setItem('lowStockThreshold', String(lowStockThreshold)); }, [lowStockThreshold]);
@@ -1929,6 +1911,11 @@ export default function App() {
       } else if (data && data.length === 0) {
         setInventoryItems([]);
       }
+    });
+
+    // Load service prices
+    supabase.from('service_prices').select('*').order('id').then(({ data, error }) => {
+      if (data && !error) setServicePrices(data);
     });
   }, []);
 
@@ -2109,7 +2096,7 @@ export default function App() {
           onDelete={handleDeleteOrder}
         />
       );
-      case 'calculator': return <CalculatorView onAddOrder={handleCalculatorFinish} />;
+      case 'calculator': return <CalculatorView onAddOrder={handleCalculatorFinish} prices={servicePrices} />;
       case 'settings': return (
         <SettingsView
           currentUser={currentUser!}
@@ -2125,6 +2112,8 @@ export default function App() {
           orders={orders}
           lowStockThreshold={lowStockThreshold}
           onChangeLowStock={setLowStockThreshold}
+          servicePrices={servicePrices}
+          onSavePrice={handleSavePrice}
         />
       );
       default: return null;
