@@ -1161,12 +1161,18 @@ const CalculatorView = ({ onAddOrder, prices }: {
     }
   }, [categories, activeTab]);
 
-  const ICON_MAP_LOCAL: Record<string, any> = { 'Hardware': Cpu, 'Redes': Router, 'Software': Terminal };
+  const getIcon = (cat: string) => {
+    const c = cat.toLowerCase();
+    if (c.includes('hard')) return Cpu;
+    if (c.includes('rede')) return Router;
+    if (c.includes('soft')) return Terminal;
+    return Package;
+  };
 
   const services = categories.map(cat => ({
     title: cat,
     label: cat === 'Hardware' ? 'Hardware / Manutenção' : cat === 'Redes' ? 'Redes e Conectividade' : cat === 'Software' ? 'Software e Sistemas' : cat,
-    icon: ICON_MAP_LOCAL[cat] || Package,
+    icon: getIcon(cat),
     items: prices.filter(p => p.category === cat).map(p => ({ id: p.id, name: p.name, price: p.price }))
   }));
 
