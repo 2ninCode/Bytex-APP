@@ -1516,11 +1516,14 @@ const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose: () =>
               <div className="space-y-2">
                 {orders.slice(0, 5).map(o => (
                   <div key={o.id} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                    <div>
-                      <p className="font-semibold text-sm">{o.customerName}</p>
-                      <p className="text-xs text-slate-400">{o.device}</p>
+                    <div className="flex-1 min-w-0 pr-2">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm truncate">{o.customerName}</p>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">#{o.id}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 truncate">{o.device}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p className="font-bold text-sm text-primary">R$ {o.value.toFixed(2)}</p>
                       <p className="text-[10px] text-slate-400 uppercase">{o.status === 'finished' ? 'Finalizado' : o.status === 'in_progress' ? 'Em Reparo' : 'Ativo'}</p>
                     </div>
