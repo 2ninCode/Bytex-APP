@@ -674,7 +674,11 @@ const DashboardView = ({
 }) => {
   const activeOrders = orders.filter(o => o.status !== 'finished');
   const inProgressOrders = orders.filter(o => o.status === 'in_progress');
-  const revenue = orders.filter(o => o.status === 'finished').reduce((acc, o) => acc + o.value, 0);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const revenue = orders
+    .filter(o => o.status === 'finished' && new Date(o.createdAt) >= thirtyDaysAgo)
+    .reduce((acc, o) => acc + o.value, 0);
   const lowStockItems = inventoryItems.filter(i => i.stock <= lowStockThreshold);
 
   // Realtime Presence tracker via Supabase
@@ -705,7 +709,7 @@ const DashboardView = ({
 
   const kpis = [
     { label: 'Serviços Ativos', value: activeOrders.length.toString(), sub: `${inProgressOrders.length} em reparo`, color: 'from-primary to-violet-600', icon: ClipboardList, action: () => onNavigate('orders') },
-    { label: 'Receita Total', value: `R$ ${revenue.toFixed(0)}`, sub: 'serviços finalizados', color: 'from-emerald-500 to-teal-600', icon: BarChart3, action: undefined },
+    { label: 'Receita (30d)', value: `R$ ${revenue.toFixed(0)}`, sub: 'últimos 30 dias', color: 'from-emerald-500 to-teal-600', icon: BarChart3, action: undefined },
     { label: 'Online Agora', value: onlineCount.toString(), sub: onlineCount === 1 ? 'funcionário' : 'funcionários', color: 'from-sky-500 to-blue-600', icon: User, action: undefined },
     { label: 'Alerta Estoque', value: lowStockItems.length.toString(), sub: `iten${lowStockItems.length !== 1 ? 's' : ''} em baixa`, color: lowStockItems.length > 0 ? 'from-red-500 to-orange-500' : 'from-slate-400 to-slate-500', icon: Package, action: () => onNavigate('inventory') },
   ] as const;
