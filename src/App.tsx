@@ -323,7 +323,7 @@ const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }) => {
         <div className="p-8">
           <div className="flex flex-col items-center mb-10">
             <div className="w-20 h-20 mb-4"><BytexIcon className="w-full h-full" /></div>
-            <h2 className="text-white text-2xl font-bold tracking-tight">Bytex Systems</h2>
+            <h2 className="text-white text-2xl font-bold tracking-tight">Bytex</h2>
             <p className="text-slate-400 text-sm mt-1">Gerenciamento de Infraestrutura Digital</p>
           </div>
 
@@ -714,7 +714,7 @@ const DashboardView = ({
     <div className="p-4 space-y-6 pb-24">
       <div className="pt-1">
         <h2 className="text-2xl font-bold">Visão Geral</h2>
-        <p className="text-slate-500 text-sm mt-0.5">Resumo operacional da Bytex Systems</p>
+        <p className="text-slate-500 text-sm mt-0.5">Resumo operacional da Bytex</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

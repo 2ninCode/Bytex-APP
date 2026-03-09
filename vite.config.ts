@@ -14,7 +14,7 @@ export default defineConfig(({mode}) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
         manifest: {
-          name: 'Bytex Systems OS',
+          name: 'Bytex',
           short_name: 'Bytex',
           description: 'Gestão de Infraestrutura Digital',
           theme_color: '#0f172a', /* slate-900 */
