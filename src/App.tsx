@@ -1864,7 +1864,10 @@ export default function App() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [isOrderFormOpen, setIsOrderFormOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved !== null ? saved === 'true' : true; // Default to true if not set
+  });
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [lowStockThreshold, setLowStockThreshold] = useState<number>(() => parseInt(localStorage.getItem('lowStockThreshold') || '5'));
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>(INITIAL_ITEMS);
