@@ -409,16 +409,7 @@ const ICON_MAP: Record<string, any> = {
   cpu: Cpu, database: Database, router: Router, cable: Cable, flask: FlaskConical, package: Package,
 };
 
-const INITIAL_ITEMS: InventoryItem[] = [
-  { id: '1', iconKey: 'cpu', name: 'Corsair Vengeance LPX 16GB RAM', desc: 'DDR4 3200MHz C16 - Black', stock: 15, location: 'Shelf A-12', category: 'Hardware' },
-  { id: '2', iconKey: 'database', name: 'Samsung 980 Pro 1TB NVMe SSD', desc: 'PCIe Gen4 M.2 Internal SSD', stock: 4, location: 'Shelf B-03', category: 'Armazenamento' },
-  { id: '3', iconKey: 'flask', name: 'Arctic Silver 5 Thermal Paste', desc: 'High-Density Silver Polysynthetic', stock: 42, location: 'Cabinet B', category: 'Consumíveis' },
-  { id: '4', iconKey: 'router', name: 'Ubiquiti UniFi 6 Lite AP', desc: 'Dual-band Wi-Fi 6 Access Point', stock: 0, location: 'Shelf C-01', category: 'Hardware' },
-  { id: '5', iconKey: 'cable', name: 'HDMI 2.1 Cable 3m', desc: '8K High Speed Gold Plated', stock: 85, location: 'Bin C-4', category: 'Consumíveis' },
-  { id: '6', iconKey: 'cpu', name: 'Intel Core i7-13700K', desc: 'Raptor Lake 16-Core Processor', stock: 3, location: 'Shelf B-02', category: 'Hardware' },
-  { id: '7', iconKey: 'database', name: 'Kingston 32GB DDR5 5600MHz', desc: 'ECC Registered Server Memory', stock: 8, location: 'Shelf A-08', category: 'Armazenamento' },
-  { id: '8', iconKey: 'flask', name: 'Isopropyl Alcohol 99% 500ml', desc: 'Electronics Cleaning Solvent', stock: 12, location: 'Cabinet A', category: 'Consumíveis' },
-];
+const INITIAL_ITEMS: InventoryItem[] = []; // Removido dados fictícios
 
 const EMPTY_ITEM: Omit<InventoryItem, 'id'> = {
   name: '', desc: '', stock: 0, location: '', category: 'Hardware', iconKey: 'package',
@@ -530,20 +521,39 @@ const InventoryView = ({ currentUser, items, setItems, lowStockThreshold }: {
     return matchCat && matchSearch;
   });
 
-  const handleSave = (data: Omit<InventoryItem, 'id'>) => {
-    if (modalItem && (modalItem as InventoryItem).id) {
-      // edit
-      setItems(prev => prev.map(it => it.id === (modalItem as InventoryItem).id ? { ...it, ...data } : it));
-    } else {
-      // add
-      const newItem: InventoryItem = { ...data, id: Date.now().toString() };
-      setItems(prev => [newItem, ...prev]);
-    }
+  const handleSave = async (data: Omit<InventoryItem, 'id'>) => {
+    if (!supabase) return;
+    try {
+      if (modalItem && (modalItem as InventoryItem).id) {
+        // edit
+        const id = (modalItem as InventoryItem).id;
+        await supabase.from('inventory_items').update({
+          name: data.name, description: data.desc, stock: data.stock,
+          location: data.location, category: data.category, icon_key: data.iconKey
+        }).eq('id', id);
+        setItems(prev => prev.map(it => it.id === id ? { ...it, ...data } : it));
+      } else {
+        // add
+        // generate a quick fallback ID locally, though DB uses UUID
+        const newId = `INV-${Date.now()}`;
+        const newItem: InventoryItem = { ...data, id: newId };
+        
+        await supabase.from('inventory_items').insert({
+          id: newId, name: data.name, description: data.desc, stock: data.stock,
+          location: data.location, category: data.category, icon_key: data.iconKey
+        });
+        setItems(prev => [newItem, ...prev]);
+      }
+    } catch(e) { console.error('Error saving item', e) }
     setModalItem(false);
   };
 
-  const handleDelete = (id: string) => {
-    setItems(prev => prev.filter(it => it.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!supabase) return;
+    try {
+      await supabase.from('inventory_items').delete().eq('id', id);
+      setItems(prev => prev.filter(it => it.id !== id));
+    } catch(e) { console.error('Error deleting item', e) }
   };
 
   const getStockColor = (stock: number) => {
@@ -1916,6 +1926,18 @@ export default function App() {
           problem: o.problem, value: Number(o.value), status: o.status as OrderStatus,
           createdAt: o.created_at,
         })));
+      }
+    });
+
+    // Load inventory
+    supabase.from('inventory_items').select('*').then(({ data, error }) => {
+      if (data && !error && data.length > 0) {
+        setInventoryItems(data.map(i => ({
+          id: i.id, name: i.name, desc: i.description || '', stock: i.stock || 0,
+          location: i.location || '', category: i.category || 'Hardware', iconKey: i.icon_key || 'package'
+        })));
+      } else if (data && data.length === 0) {
+        setInventoryItems([]);
       }
     });
   }, []);
