@@ -667,22 +667,30 @@ const DashboardView = ({
   const revenue = orders.filter(o => o.status === 'finished').reduce((acc, o) => acc + o.value, 0);
   const lowStockItems = inventoryItems.filter(i => i.stock <= lowStockThreshold);
 
-  // Simple presence tracker via localStorage heartbeat
+  // Realtime Presence tracker via Supabase
   const [onlineCount, setOnlineCount] = React.useState(1);
   React.useEffect(() => {
-    const key = `bytex_p_${Math.random().toString(36).slice(2)}`;
-    const refresh = () => localStorage.setItem(key, Date.now().toString());
-    refresh();
-    const iv = setInterval(() => {
-      refresh();
-      const count = Object.keys(localStorage).filter(k =>
-        k.startsWith('bytex_p_') && Date.now() - parseInt(localStorage.getItem(k) || '0') < 30000
-      ).length;
-      setOnlineCount(Math.max(1, count));
-    }, 5000);
-    const cleanup = () => { clearInterval(iv); localStorage.removeItem(key); };
-    window.addEventListener('beforeunload', cleanup);
-    return () => { cleanup(); window.removeEventListener('beforeunload', cleanup); };
+    if (!supabase) return;
+    
+    const room = supabase.channel('online-dashboard');
+    
+    room
+      .on('presence', { event: 'sync' }, () => {
+        const state = room.presenceState();
+        const count = Object.keys(state).length; // Count unique connected clients
+        setOnlineCount(Math.max(1, count));
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await room.track({
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+      
+    return () => {
+      supabase.removeChannel(room);
+    };
   }, []);
 
   const kpis = [
