@@ -173,7 +173,7 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Proprietário</p>
                   <p className="font-black text-xl leading-snug">{order.customerName}</p>
                 </div>
-              </div>
+              </Card>
             </div>
             
             <div className="bg-primary/5 rounded-[2rem] p-8 text-center space-y-2 border-2 border-dashed border-primary/20">
