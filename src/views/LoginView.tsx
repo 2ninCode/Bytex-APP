@@ -52,48 +52,52 @@ export const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background-dark">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-background-dark sm:p-10">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-[480px] bg-slate-900/50 rounded-xl shadow-2xl border border-slate-800 overflow-hidden"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-[480px] bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-slate-800/50 overflow-hidden relative"
       >
-        <div className="p-8">
-          <div className="flex flex-col items-center mb-10">
-            <div className="w-20 h-20 mb-4"><BytexIcon className="w-full h-full" /></div>
-            <h2 className="text-white text-2xl font-bold tracking-tight">Bytex</h2>
-            <p className="text-slate-400 text-sm mt-1">Gerenciamento de Infraestrutura Digital</p>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+        
+        <div className="p-10 sm:p-12 relative z-10">
+          <div className="flex flex-col items-center mb-12">
+            <div className="w-24 h-24 mb-6 drop-shadow-2xl">
+              <BytexIcon className="w-full h-full" />
+            </div>
+            <h2 className="text-white text-3xl font-black tracking-tight leading-none">Bytex</h2>
+            <p className="text-slate-500 text-xs mt-2 font-black uppercase tracking-[0.2em]">Sistemas Inteligentes</p>
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-white text-2xl font-bold mb-2">Bem-vindo</h1>
-              <p className="text-slate-400 text-sm">Faça login com seu ID e senha.</p>
+          <div className="space-y-8">
+            <div className="space-y-2">
+              <h1 className="text-white text-2xl font-black tracking-tight">Acesso Restrito</h1>
+              <p className="text-slate-500 text-sm font-medium">Insira suas credenciais técnicas</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* ID */}
-              <div className="flex flex-col gap-2">
-                <label className="text-slate-300 text-sm font-medium">ID de Acesso</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <div className="space-y-2.5">
+                <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest px-1">ID de Técnico</label>
+                <div className="relative group">
+                  <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors w-5 h-5" />
                   <input type="text" value={loginId} onChange={e => { setLoginId(e.target.value); setError(''); }}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg h-12 pl-12 pr-4 text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                    placeholder="Ex: Login" />
+                    className="w-full bg-slate-800/40 border-2 border-slate-700/50 rounded-2xl h-16 pl-14 pr-4 text-white placeholder:text-slate-600 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium"
+                    placeholder="Seu ID de acesso" />
                 </div>
               </div>
 
               {/* Password */}
-              <div className="flex flex-col gap-2">
-                <label className="text-slate-300 text-sm font-medium">Senha</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+              <div className="space-y-2.5">
+                <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest px-1">Senha de Segurança</label>
+                <div className="relative group">
+                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors w-5 h-5" />
                   <input type={showPass ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setError(''); }}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded-lg h-12 pl-12 pr-12 text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                    className="w-full bg-slate-800/40 border-2 border-slate-700/50 rounded-2xl h-16 pl-14 pr-14 text-white placeholder:text-slate-600 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium"
                     placeholder="••••••••" />
-                  <button type="button" onClick={() => setShowPass(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+                  <button type="button" onClick={() => setShowPass(v => !v)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors">
                     {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
@@ -101,30 +105,32 @@ export const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }
 
               {/* Error */}
               {error && (
-                <p className="text-red-400 text-sm bg-red-900/20 border border-red-900/40 rounded-lg px-3 py-2">{error}</p>
+                <p className="text-red-400 text-xs font-bold bg-red-900/20 border border-red-500/30 rounded-xl px-4 py-3 text-center">{error}</p>
               )}
 
               {/* Remember */}
-              <label className="flex items-center gap-3 cursor-pointer select-none">
-                <div onClick={() => setRemember(r => !r)}
-                  className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0",
-                    remember ? "bg-primary border-primary" : "border-slate-600 bg-transparent hover:border-primary/60")}>
-                  {remember && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+              <label 
+                onClick={() => setRemember(!remember)}
+                className="flex items-center gap-4 cursor-pointer select-none group"
+              >
+                <div className={cn("size-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0",
+                    remember ? "bg-primary border-primary shadow-lg shadow-primary/20" : "border-slate-700 bg-transparent group-hover:border-slate-500")}>
+                  {remember && <Check className="w-4 h-4 text-white" strokeWidth={4} />}
                 </div>
-                <span className="text-slate-300 text-sm">Lembrar de mim</span>
+                <span className="text-slate-400 text-sm font-bold group-hover:text-slate-300 transition-colors">Manter sessão ativa</span>
               </label>
             </div>
 
-            <Button onClick={handleSubmit} disabled={loading} className="w-full py-3.5 disabled:opacity-60">
+            <Button onClick={handleSubmit} disabled={loading} className="w-full py-5 rounded-[1.5rem] shadow-xl shadow-primary/20 disabled:opacity-60 text-xs font-black uppercase tracking-widest h-auto">
               {loading ? (
-                <span className="flex items-center gap-2"><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="block w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> Verificando...</span>
+                <span className="flex items-center gap-3"><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="block w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> Autenticando...</span>
               ) : (
-                <>Entrar <LogOut className="w-5 h-5 rotate-180" /></>
+                <span className="flex items-center gap-3 justify-center">Entrar no Sistema <LogOut className="w-5 h-5 rotate-180" /></span>
               )}
             </Button>
           </div>
         </div>
-        <div className="h-1.5 w-full bg-primary/20"><div className="h-full bg-primary w-1/3"></div></div>
+        <div className="h-1.5 w-full bg-slate-800"><motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1.5 }} className="h-full bg-primary" /></div>
       </motion.div>
     </div>
   );

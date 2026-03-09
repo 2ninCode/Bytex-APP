@@ -30,51 +30,51 @@ export const OrdersView = ({
 
   if (!selectedOrderId || !selectedOrder) {
     return (
-      <div className="p-4 space-y-6">
+      <div className="p-6 space-y-8 pb-32">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Ordens de Serviço</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ordens de Serviço</h2>
           {currentUser.role !== 'funcionario' && (
-            <Button onClick={onAdd} className="py-2 px-3 text-sm">
-              <Plus className="w-4 h-4" /> Nova Ordem
+            <Button onClick={onAdd} className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider">
+              <Plus className="w-4 h-4 mr-1" /> Nova Ordem
             </Button>
           )}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {orders.length === 0 ? (
-            <Card className="p-12 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="size-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+            <Card className="p-16 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="size-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300">
                 <ClipboardList className="w-8 h-8" />
               </div>
               <div>
-                <p className="font-bold text-slate-600 dark:text-slate-300">Nenhuma ordem encontrada</p>
-                <p className="text-sm text-slate-500">Comece adicionando uma nova ordem de serviço.</p>
+                <p className="font-bold text-slate-500">Nenhuma ordem encontrada</p>
+                <p className="text-xs text-slate-400">Comece adicionando uma nova ordem.</p>
               </div>
             </Card>
           ) : (
             orders.filter(o => o.status !== 'finished').map((order) => (
               <Card
                 key={order.id}
-                className="p-4 flex items-center gap-4 hover:border-primary/50 transition-colors cursor-pointer group"
+                className="p-5 flex items-center gap-5 hover:border-primary/40 transition-all cursor-pointer group active:scale-[0.99]"
                 onClick={() => onSelect(order.id)}
               >
                 <div className={cn(
-                  "size-12 rounded-lg flex items-center justify-center shrink-0",
+                  "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
                   order.status === 'finished' ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary"
                 )}>
-                  <Laptop className="w-6 h-6" />
+                  <Laptop className="w-7 h-7" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold truncate">{order.customerName}</h3>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">#{order.id}</span>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="font-bold text-base truncate">{order.customerName}</h3>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-black tracking-widest leading-none">#{order.id}</span>
                   </div>
-                  <p className="text-xs text-slate-500 truncate">{order.device} • {order.problem}</p>
+                  <p className="text-xs text-slate-500 font-medium truncate">{order.device} • {order.problem}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="font-bold text-sm">R$ {order.value.toFixed(2)}</p>
+                  <p className="font-extrabold text-sm mb-0.5">R$ {order.value.toFixed(0)}</p>
                   <span className={cn(
-                    "text-[10px] font-bold uppercase tracking-wider",
+                    "text-[10px] font-black uppercase tracking-tighter leading-none",
                     order.status === 'finished' ? "text-emerald-500" :
                       order.status === 'in_progress' ? "text-primary" : "text-amber-500"
                   )}>
@@ -84,7 +84,7 @@ export const OrdersView = ({
                           order.status === 'ready' ? 'Pronto' : 'Finalizado'}
                   </span>
                 </div>
-                <ChevronRight className="text-slate-400 group-hover:text-primary transition-colors w-5 h-5" />
+                <ChevronRight className="text-slate-300 group-hover:text-primary transition-colors w-6 h-6" />
               </Card>
             ))
           )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Package, ClipboardList, Calculator, Settings, 
-  ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus
+  ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User
 } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { cn } from './components/ui/utils';
@@ -37,7 +37,24 @@ export default function App() {
   const [showOrderModal, setShowOrderModal] = useState<boolean | Order>(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   
-  const lowStockThreshold = 5; // Simplified for now, can be moved to settings state
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('bytex_theme');
+    return saved ? saved === 'dark' : true; 
+  });
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  const [lowStockThreshold, setLowStockThreshold] = useState(5); 
+  
+  // Theme management
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('bytex_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('bytex_theme', 'light');
+    }
+  }, [darkMode]);
   
   // Consolidated Mount Logic: Routing & Auth
   useEffect(() => {
@@ -220,37 +237,47 @@ export default function App() {
           onSave={handleSaveOrder}
           onCancel={() => setShowOrderModal(false)}
         />
-      )}
-
-      {/* Header */}
-      <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <BytexIcon className="size-8" />
-          <h1 className="text-xl font-black tracking-tight text-primary">Bytex</h1>
+      )}      {/* Header */}
+      <header className="h-20 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50">
+        <div className="flex items-center gap-4">
+          <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center p-1.5 shadow-inner">
+            <BytexIcon className="size-full" />
+          </div>
+          <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="relative p-2 text-slate-400 hover:text-primary transition-colors">
-            <Bell className="size-6" />
-            {notifications.length > 0 && <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />}
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => {}} 
+            className="size-11 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
+          >
+            <Bell className="size-6 transition-transform group-hover:rotate-12" />
+            {notifications.length > 0 && (
+              <span className="absolute top-2.5 right-2.5 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm" />
+            )}
           </button>
           <div 
             onClick={() => setCurrentView('settings')}
-            className="size-9 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden cursor-pointer"
+            className="size-11 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 overflow-hidden cursor-pointer hover:border-primary transition-all active:scale-95"
           >
-            {currentUser.avatarUrl ? <img src={currentUser.avatarUrl} className="w-full h-full object-cover" /> : <Settings className="size-5 text-primary" />}
+            {currentUser.avatarUrl ? (
+              <img src={currentUser.avatarUrl} className="w-full h-full object-cover" />
+            ) : (
+              <User className="size-6 text-primary" />
+            )}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto scroll-smooth">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="w-full h-full"
           >
             {currentView === 'dashboard' && (
               <DashboardView 
@@ -294,13 +321,13 @@ export default function App() {
                 onRefreshEmployees={refreshEmployees}
                 onSendNotification={sendNotification}
                 onLogout={handleLogout}
-                darkMode={true} // Add logic if needed
-                onToggleDark={() => {}}
-                soundEnabled={true}
-                onToggleSound={() => {}}
+                darkMode={darkMode}
+                onToggleDark={() => setDarkMode(!darkMode)}
+                soundEnabled={soundEnabled}
+                onToggleSound={() => setSoundEnabled(!soundEnabled)}
                 orders={orders}
                 lowStockThreshold={lowStockThreshold}
-                onChangeLowStock={() => {}}
+                onChangeLowStock={setLowStockThreshold}
                 servicePrices={servicePrices}
                 onSavePrice={handleSavePrice}
               />
@@ -310,7 +337,7 @@ export default function App() {
       </main>
 
       {/* Navigation */}
-      <nav className="h-16 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 flex items-center justify-around px-2 pb-safe sticky bottom-0 z-30">
+      <nav className="h-20 bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-around px-4 pb-safe sticky bottom-0 z-30 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
         {menuItems.map((item) => {
           const isActive = currentView === item.id;
           return (
@@ -318,17 +345,20 @@ export default function App() {
               key={item.id}
               onClick={() => { setCurrentView(item.id); setSelectedOrderId(null); }}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 transition-all duration-300",
-                isActive ? "text-primary scale-110" : "text-slate-400 hover:text-slate-600"
+                "flex flex-col items-center justify-center gap-1.5 transition-all duration-300 relative px-4",
+                isActive ? "text-primary transition-transform" : "text-slate-400 hover:text-slate-600"
               )}
             >
               <div className={cn(
-                "p-1.5 rounded-xl transition-all",
-                isActive ? "bg-primary/10" : "bg-transparent"
+                "p-2.5 rounded-2xl transition-all duration-300 transform",
+                isActive ? "bg-primary text-white shadow-lg shadow-primary/30 -translate-y-1 scale-110" : "bg-transparent"
               )}>
                 <item.icon className="size-6" strokeWidth={isActive ? 2.5 : 2} />
               </div>
-              <span className={cn("text-[10px] font-bold uppercase tracking-tighter", isActive ? "opacity-100" : "opacity-0 h-0 overflow-hidden")}>
+              <span className={cn(
+                "text-[9px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
+                isActive ? "opacity-100 transform translate-y-0" : "opacity-0 transform translate-y-1 h-0 overflow-hidden"
+              )}>
                 {item.label}
               </span>
             </button>

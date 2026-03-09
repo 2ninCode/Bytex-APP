@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Calculator, Cpu, Router, Terminal, Package, X } from 'lucide-react';
+import { Calculator, Cpu, Router, Terminal, Package, X, Smartphone, Laptop, Check } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
 import { cn } from '../components/ui/utils';
 import { ServicePrice } from '../types';
 
@@ -9,63 +10,21 @@ export const CalculatorView = ({ onAddOrder, prices }: {
   onAddOrder: (value: number, clientData: { name: string; device: string; problem: string }) => void,
   prices: ServicePrice[]
 }) => {
-  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
-  
-  const categories = Array.from(new Set(prices.map(p => p.category)));
-  const [activeTab, setActiveTab] = useState('');
-
-  useEffect(() => {
-    if (categories.length > 0 && !activeTab) {
-      setActiveTab(categories[0]);
-    }
-  }, [categories, activeTab]);
-
-  const getIcon = (cat: string) => {
-    const c = cat.toLowerCase();
-    if (c.includes('hard')) return Cpu;
-    if (c.includes('rede')) return Router;
-    if (c.includes('soft')) return Terminal;
-    return Package;
-  };
-
-  const services = categories.map(cat => ({
-    title: cat,
-    label: cat === 'Hardware' ? 'Hardware / Manutenção' : cat === 'Redes' ? 'Redes e Conectividade' : cat === 'Software' ? 'Software e Sistemas' : cat,
-    icon: getIcon(cat),
-    items: prices.filter(p => p.category === cat).map(p => ({ id: p.id, name: p.name, price: p.price }))
-  }));
-
-  if (prices.length === 0) {
-    return (
-      <div className="p-12 text-center space-y-6">
-        <div className="size-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto">
-          <Calculator className="w-10 h-10 text-slate-300" />
-        </div>
-        <div className="space-y-2">
-          <h3 className="text-xl font-bold">Nenhum Serviço Encontrado</h3>
-          <p className="text-slate-500 text-sm max-w-xs mx-auto">Certifique-se de que a tabela de preços foi configurada no banco de dados.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const toggleItem = (id: string) => {
-    setSelectedItems(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const total = services.reduce((acc, section) => {
-    return acc + section.items.reduce((sAcc, item) => sAcc + (selectedItems[item.id] ? item.price : 0), 0);
-  }, 0);
-
-  const selectedCount = Object.values(selectedItems).filter(Boolean).length;
-  const activeSection = services.find(s => s.title === activeTab) || services[0];
-
+  const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [pendingTotal, setPendingTotal] = useState<number | null>(null);
   const [clientData, setClientData] = useState({ name: '', device: '', problem: '' });
 
+  const categories = Array.from(new Set(prices.map(p => p.category)));
+  
+  const toggleItem = (id: string) => {
+    setSelectedIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const selectedCount = Object.values(selectedIds).filter(Boolean).length;
+  const total = prices.reduce((acc, p) => acc + (selectedIds[p.id] ? p.price : 0), 0);
+
   const handleFinalize = () => {
     if (total === 0) return;
-    setClientData({ name: '', device: '', problem: '' });
     setPendingTotal(total);
   };
 
@@ -73,130 +32,150 @@ export const CalculatorView = ({ onAddOrder, prices }: {
     if (pendingTotal == null) return;
     onAddOrder(pendingTotal, clientData);
     setPendingTotal(null);
-    setSelectedItems({});
+    setSelectedIds({});
+    setClientData({ name: '', device: '', problem: '' });
   };
 
-  return (
-    <div className="pb-36">
-      <div className="px-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark sticky top-0 z-10">
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-          {services.map(s => (
-            <button
-              key={s.title}
-              onClick={() => setActiveTab(s.title)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-3 border-b-[3px] font-bold text-sm transition-colors whitespace-nowrap",
-                activeTab === s.title
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              )}
-            >
-              <s.icon className="w-4 h-4" />
-              {s.title}
-            </button>
-          ))}
+  if (prices.length === 0) {
+    return (
+      <div className="p-16 text-center space-y-6">
+        <div className="size-24 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto shadow-inner">
+          <Calculator className="w-12 h-12 text-slate-300" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-black">Configuração Pendente</h3>
+          <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">Configure sua tabela de preços nos ajustes para começar a orçar.</p>
         </div>
       </div>
+    );
+  }
 
-      {selectedCount > 0 && (
-        <div className="mx-4 mt-4 p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between">
-          <span className="text-sm font-semibold text-primary">{selectedCount} serviço{selectedCount !== 1 ? 's' : ''} selecionado{selectedCount !== 1 ? 's' : ''}</span>
-          <button onClick={() => setSelectedItems({})} className="text-xs text-slate-500 hover:text-red-500 transition-colors">Limpar tudo</button>
-        </div>
-      )}
+  return (
+    <div className="p-6 space-y-10 pb-44">
+      <div className="pt-2">
+        <h2 className="text-2xl font-black tracking-tight">Calculadora</h2>
+        <p className="text-slate-500 text-sm mt-1 font-medium">Selecione os serviços para o orçamento</p>
+      </div>
 
-      <div className="p-4 space-y-3">
-        <div className="flex items-center gap-2 mb-2">
-          {activeSection?.icon && <activeSection.icon className="text-primary w-5 h-5" />}
-          <h3 className="text-lg font-bold">{activeSection?.label}</h3>
-        </div>
-        {activeSection?.items.map(item => (
-          <label
-            key={item.id}
-            className={cn(
-              "flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all",
-              selectedItems[item.id]
-                ? "border-primary bg-primary/5 dark:bg-primary/10"
-                : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:border-primary/30"
-            )}
-          >
-            <div className="flex-1 min-w-0 pr-4">
-              <span className="text-base font-medium">{item.name}</span>
+      <div className="space-y-12">
+        {categories.map(cat => (
+          <div key={cat} className="space-y-5">
+            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase px-1">{cat}</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {prices.filter(p => p.category === cat).map(item => {
+                const isSelected = !!selectedIds[item.id];
+                return (
+                  <Card
+                    key={item.id}
+                    onClick={() => toggleItem(item.id)}
+                    className={cn(
+                      "p-6 cursor-pointer transition-all active:scale-[0.98] border-2 flex flex-col items-center text-center gap-4 relative overflow-hidden",
+                      isSelected ? "border-primary bg-primary/5 dark:bg-primary/20 shadow-xl shadow-primary/10" : "border-transparent hover:border-slate-200 dark:hover:border-slate-800"
+                    )}
+                  >
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 size-5 bg-primary rounded-full flex items-center justify-center shadow-md">
+                        <Check className="w-3 h-3 text-white" strokeWidth={4} />
+                      </div>
+                    )}
+                    <div className={cn("size-14 rounded-2xl flex items-center justify-center transition-all shadow-sm", 
+                      isSelected ? "bg-primary text-white scale-110" : "bg-slate-100 dark:bg-slate-800 text-slate-400")}>
+                      {cat.toLowerCase().includes('smart') ? <Smartphone className="w-7 h-7" /> : <Laptop className="w-7 h-7" />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-[15px] leading-tight mb-1.5">{item.name}</p>
+                      <p className={cn("font-black text-sm", isSelected ? "text-primary" : "text-slate-500")}>R$ {item.price.toFixed(0)}</p>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
-            <div className="flex items-center gap-4 shrink-0">
-              <span className="text-primary font-bold">R$ {item.price.toFixed(2)}</span>
-              <input
-                type="checkbox"
-                checked={!!selectedItems[item.id]}
-                onChange={() => toggleItem(item.id)}
-                className="h-6 w-6 rounded border-slate-300 text-primary focus:ring-primary accent-primary"
-              />
-            </div>
-          </label>
+          </div>
         ))}
       </div>
 
-      <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 z-40">
-        <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="flex flex-col">
-            <span className="text-xs text-slate-500">Total Estimado</span>
-            <span className="text-2xl font-bold text-primary">R$ {total.toFixed(2)}</span>
-          </div>
-          <Button
-            disabled={total === 0}
-            onClick={handleFinalize}
-            className="px-8 py-3 disabled:opacity-50"
-          >
-            Finalizar Orçamento
-          </Button>
-        </div>
-      </div>
-
-      {pendingTotal != null && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold">Dados do Serviço</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Total: <span className="text-primary font-bold">R$ {pendingTotal.toFixed(2)}</span></p>
+      {/* Floating Action Bar */}
+      {selectedCount > 0 && (
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fixed bottom-24 left-6 right-6 z-40"
+        >
+          <Card className="p-6 bg-primary dark:bg-primary shadow-[0_20px_50px_-12px_rgba(15,104,230,0.5)] border-none text-white relative overflow-hidden rounded-[2rem]">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary to-blue-600 opacity-90" />
+            <div className="absolute -right-8 -top-8 size-40 bg-white opacity-10 rounded-full blur-3xl" />
+            
+            <div className="relative z-10 flex items-center justify-between gap-6">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] opacity-80 mb-1.5">{selectedCount} {selectedCount === 1 ? 'Serviço' : 'Serviços'} Totais</p>
+                <p className="text-3xl font-black">R$ {total.toFixed(0)}</p>
               </div>
-              <button onClick={() => setPendingTotal(null)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
-                <X className="w-5 h-5" />
+              <button
+                onClick={handleFinalize}
+                className="bg-white text-primary font-black px-7 py-4 rounded-2xl shadow-xl hover:bg-slate-50 hover:scale-[1.03] active:scale-95 transition-all text-xs uppercase tracking-widest whitespace-nowrap"
+              >
+                Gerar OS
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-500">Nome do Cliente *</label>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Modal de Finalização */}
+      {pendingTotal != null && (
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-end sm:items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 100 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden"
+          >
+            <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-black">Detalhes da OS</h3>
+                <p className="text-xs text-slate-400 mt-1 font-bold uppercase tracking-wider">Total: <span className="text-primary">R$ {pendingTotal.toFixed(0)}</span></p>
+              </div>
+              <button onClick={() => setPendingTotal(null)} className="size-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Nome do Cliente</label>
                 <input type="text" value={clientData.name}
                   onChange={e => setClientData(d => ({ ...d, name: e.target.value }))}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Ex: João Silva" />
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl h-14 px-5 outline-none focus:ring-2 focus:ring-primary font-medium"
+                  placeholder="Ex: João da Silva" />
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-500">Dispositivo *</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Aparelho / Dispositivo</label>
                 <input type="text" value={clientData.device}
                   onChange={e => setClientData(d => ({ ...d, device: e.target.value }))}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Ex: MacBook Pro M1" />
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl h-14 px-5 outline-none focus:ring-2 focus:ring-primary font-medium"
+                  placeholder="Ex: iPhone 13 Pro Max" />
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-500">Descrição do Problema *</label>
-                <input type="text" value={clientData.problem}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Defeito Relatado</label>
+                <textarea value={clientData.problem}
                   onChange={e => setClientData(d => ({ ...d, problem: e.target.value }))}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Ex: Superaquecimento, tela quebrada..." />
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-primary font-medium min-h-[100px]"
+                  placeholder="Descreva o problema observado..." />
               </div>
-              <div className="text-xs text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-                <p className="font-semibold mb-1">Serviços selecionados:</p>
-                {services.flatMap(s => s.items.filter(i => selectedItems[i.id])).map(i => (
-                  <p key={i.id} className="flex justify-between"><span>{i.name}</span><span className="font-mono text-primary">R$ {i.price.toFixed(0)}</span></p>
+              
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Serviços Selecionados</p>
+                {prices.filter(p => selectedIds[p.id]).map(i => (
+                  <div key={i.id} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm">
+                    <span className="text-sm font-bold">{i.name}</span>
+                    <span className="text-sm font-black text-primary">R$ {i.price.toFixed(0)}</span>
+                  </div>
                 ))}
               </div>
             </div>
-            <div className="p-6 pt-0 flex gap-3">
-              <Button variant="secondary" onClick={() => setPendingTotal(null)} className="flex-1">Voltar</Button>
-              <Button onClick={handleConfirm} disabled={!clientData.name || !clientData.device || !clientData.problem} className="flex-1 disabled:opacity-50">Criar Ordem</Button>
+
+            <div className="p-8 pt-4 flex gap-4 bg-slate-50 dark:bg-slate-800/20">
+              <Button variant="secondary" onClick={() => setPendingTotal(null)} className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl">Cancelar</Button>
+              <Button onClick={handleConfirm} disabled={!clientData.name || !clientData.device || !clientData.problem} className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-50">Criar Ordem</Button>
             </div>
           </motion.div>
         </div>

@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { CreditCard, BarChart3, CheckCircle2, User, ShieldCheck, Moon, Bell, Globe, Info, LogOut, Crown, Shield, Edit2, Users, Send, ChevronRight, HelpCircle } from 'lucide-react';
+import { 
+  CreditCard, BarChart3, CheckCircle2, User, ShieldCheck, 
+  Moon, Bell, Globe, Info, LogOut, Crown, Shield, 
+  Edit2, Users, Send, ChevronRight, HelpCircle, Laptop, Smartphone
+} from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { cn } from '../components/ui/utils';
@@ -27,53 +31,44 @@ export const SettingsView = ({
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
 
-  const baseSections: any[] = [
+  const sections = [
     {
-      title: "Gestão de Negócios", items: [
-        { icon: CreditCard, label: "Tabela de Preços", desc: "Configurar valores dos serviços", highlight: true, action: () => setShowPriceTable(true) },
-        { icon: BarChart3, label: "Relatórios de Vendas", desc: "Resumo financeiro das ordens", action: () => setShowSalesReport(true) },
-        { icon: CheckCircle2, label: "Histórico de Serviços", desc: "Serviços concluídos", action: () => setShowHistory(true) },
+      title: "Administração",
+      show: currentUser.role === 'admin',
+      items: [
+        { icon: Users, label: "Gestão de Funcionários", desc: "Equipe e acessos", action: () => setShowEmployeeModal(true) },
+        { icon: Send, label: "Avisos da Equipe", desc: "Notificar todos", action: () => setShowNotifModal(true) },
       ]
     },
     {
-      title: "Perfil do Técnico", items: [
-        { icon: User, label: "Dados Pessoais", desc: "" },
-        { icon: ShieldCheck, label: "Certificações e Habilidades", desc: "" },
-      ]
+      title: "Gestão de Negócios",
+      show: true,
+      items: [
+        { icon: CreditCard, label: "Tabela de Preços", desc: "Valores dos serviços", highlight: true, action: () => setShowPriceTable(true) },
+        { icon: BarChart3, label: "Relatórios de Vendas", desc: "Resumo financeiro", action: () => setShowSalesReport(true), hide: currentUser.role === 'funcionario' },
+        { icon: CheckCircle2, label: "Histórico de Serviços", desc: "Ordens concluídas", action: () => setShowHistory(true) },
+      ].filter(i => !i.hide)
     },
     {
-      title: "Configurações do App", items: [
-        { icon: Moon, label: "Modo Escuro", isToggle: true, toggleVal: darkMode, action: onToggleDark, desc: "" },
-        { icon: Bell, label: "Notificações Sonoras", isToggle: true, toggleVal: soundEnabled, action: onToggleSound, desc: "" },
-        { icon: Globe, label: "Idioma (Português)", desc: "" },
-      ], lowStockConfig: true
+      title: "Configurações do App",
+      show: true,
+      isSettings: true,
+      items: [
+        { icon: Moon, label: "Modo Escuro", desc: "Interface noturna", isToggle: true, toggleVal: darkMode, action: onToggleDark },
+        { icon: Bell, label: "Sons do Sistema", desc: "Alertas sonoros", isToggle: true, toggleVal: soundEnabled, action: onToggleSound },
+      ],
+      lowStockConfig: true
     },
     {
-      title: "Suporte e Sobre", items: [
-        { icon: HelpCircle, label: "Central de Ajuda", desc: "" },
-        { icon: Info, label: "Sobre a Bytex", desc: "" },
-        { icon: LogOut, label: "Sair da Conta", danger: true, action: onLogout },
+      title: "Suporte e Sistema",
+      show: true,
+      items: [
+        { icon: HelpCircle, label: "Suporte Bytex", desc: "Precisa de ajuda?" },
+        { icon: Info, label: "Versão do App", desc: "v2.1.0 Premium" },
+        { icon: LogOut, label: "Sair da Conta", desc: "Encerrar sessão", danger: true, action: onLogout },
       ]
-    },
-  ];
-
-  const sections = (() => {
-    let s = [...baseSections];
-    if (currentUser.role === 'admin') {
-      s.unshift({
-        title: "Administração",
-        items: [
-          { icon: Users, label: "Gestão de Funcionários", desc: "Adicionar, editar e remover", action: () => setShowEmployeeModal(true) },
-          { icon: Send, label: "Enviar Notificação", desc: "Avisos para toda a equipe", action: () => setShowNotifModal(true) },
-        ]
-      } as any);
     }
-    if (currentUser.role === 'funcionario') {
-      const g = s.find(x => x.title === "Gestão de Negócios");
-      if (g) g.items = g.items.filter((i: any) => i.label !== "Relatórios de Vendas");
-    }
-    return s;
-  })();
+  ].filter(s => s.show);
 
   return (
     <>
@@ -83,69 +78,96 @@ export const SettingsView = ({
       {showEmployeeModal && <EmployeeManagementModal employees={employees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
       {showNotifModal && <SendNotificationModal onClose={() => setShowNotifModal(false)} onSend={(n) => { onSendNotification(n); setShowNotifModal(false); }} />}
 
-      <div className="p-6 space-y-8 pb-24">
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <div className="size-20 rounded-full bg-primary/20 flex items-center justify-center border-2 border-primary overflow-hidden">
-              {currentUser.avatarUrl ? (
-                <img src={currentUser.avatarUrl} alt={currentUser.name} className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-10 h-10 text-primary" />
-              )}
-            </div>
-            <div className="absolute bottom-0 right-0 bg-primary text-white p-1 rounded-full border-2 border-background-dark"><Edit2 className="w-3 h-3" /></div>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold">{currentUser.name}</h2>
-              {currentUser.role === 'admin' && <Crown className="w-5 h-5 text-amber-500" />}
-              {currentUser.role === 'gestor' && <Shield className="w-5 h-5 text-blue-500" />}
-            </div>
-            <p className="text-slate-500 font-medium">{currentUser.jobTitle || 'Sem função'} • Bytex</p>
-            <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded text-xs font-medium bg-primary/10 text-primary">ID: {currentUser.loginId}</span>
-          </div>
+      <div className="p-6 space-y-10 pb-32 max-w-2xl mx-auto">
+        <div className="pt-2">
+          <h2 className="text-2xl font-black tracking-tight">Ajustes</h2>
+          <p className="text-slate-500 text-sm mt-1 font-medium">Gerencie o sistema e seu perfil</p>
         </div>
 
+        {/* Profile Card */}
+        <Card className="p-6 flex items-center gap-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Shield className="size-24 rotate-12" />
+          </div>
+          <div className="size-20 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 overflow-hidden shadow-inner relative z-10">
+            {currentUser.avatarUrl ? (
+              <img src={currentUser.avatarUrl} className="w-full h-full object-cover" />
+            ) : (
+              <User className="size-10 text-primary opacity-60" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0 relative z-10">
+            <h4 className="text-xl font-black truncate">{currentUser.name}</h4>
+            <p className="text-sm text-slate-500 font-bold truncate mb-3">{currentUser.jobTitle || 'Técnico Especialista'}</p>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider">
+              {currentUser.role === 'admin' ? <Crown className="size-3" /> : <Shield className="size-3" />}
+              {currentUser.role === 'admin' ? 'Administrador' : 'Membro da Equipe'}
+            </div>
+          </div>
+        </Card>
+
         {sections.map((section, i) => (
-          <section key={i}>
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 px-2">{section.title}</h3>
-            <Card>
+          <section key={i} className="space-y-4">
+            <h3 className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase px-1">{section.title}</h3>
+            <Card className="overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
               {section.items.map((item, j) => (
-                <div key={j} onClick={(item as any).action}
-                  className={cn("flex items-center gap-4 p-4 transition-colors cursor-pointer border-b border-slate-200 dark:border-slate-800 last:border-0",
-                    (item as any).highlight ? 'bg-primary/5 hover:bg-primary/10' :
-                      (item as any).danger ? 'hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500' :
-                        'hover:bg-slate-50 dark:hover:bg-slate-800')}>
-                  <div className={cn("size-10 rounded-lg flex items-center justify-center shrink-0",
-                    (item as any).highlight ? 'bg-primary text-white shadow-lg shadow-primary/20' :
-                      (item as any).danger ? 'bg-red-100 dark:bg-red-900/20' :
-                        'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300')}>
-                    <item.icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className={cn("font-bold", (item as any).highlight && 'text-primary')}>{item.label}</p>
-                    {(item as any).desc && <p className="text-xs text-slate-500">{(item as any).desc}</p>}
-                  </div>
-                  {(item as any).action && !(item as any).danger && !(item as any).isToggle && (
-                    <ChevronRight className="w-5 h-5 text-slate-400" />
+                <div 
+                  key={j} 
+                  onClick={item.action}
+                  className={cn(
+                    "flex items-center justify-between p-5 transition-all text-left w-full group",
+                    item.action && !item.isToggle ? "cursor-pointer active:bg-slate-50 dark:active:bg-slate-800" : "",
+                    item.highlight ? "bg-primary/[0.02]" : ""
                   )}
-                  {(item as any).isToggle && (
-                     <div className={cn("w-12 h-6 rounded-full relative transition-colors bg-slate-200 dark:bg-slate-700", (item as any).toggleVal && 'bg-primary')}>
-                       <div className={cn("absolute top-1 left-1 size-4 rounded-full bg-white transition-all transform", (item as any).toggleVal && 'translate-x-6')} />
-                     </div>
-                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "size-12 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                      item.highlight ? "bg-primary text-white" : 
+                      item.danger ? "bg-red-50 dark:bg-red-950/20 text-red-500" :
+                      "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                    )}>
+                      <item.icon className="size-6" />
+                    </div>
+                    <div>
+                      <p className={cn("font-bold text-base", item.danger ? "text-red-500" : item.highlight ? "text-primary" : "")}>{item.label}</p>
+                      <p className="text-xs text-slate-400 font-medium">{item.desc}</p>
+                    </div>
+                  </div>
+                  
+                  {item.isToggle ? (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); item.action?.(); }}
+                      className={cn(
+                        "w-14 h-8 rounded-full relative transition-all duration-300 shadow-inner shrink-0",
+                        item.toggleVal ? "bg-primary" : "bg-slate-200 dark:bg-slate-700"
+                      )}
+                    >
+                      <div className={cn(
+                        "size-6 bg-white rounded-full shadow-lg absolute top-1 transition-all duration-300",
+                        item.toggleVal ? "translate-x-7" : "translate-x-1"
+                      )} />
+                    </button>
+                  ) : item.action ? (
+                    <ChevronRight className="size-5 text-slate-300 group-hover:text-primary transition-colors" />
+                  ) : null}
                 </div>
               ))}
+              
               {section.lowStockConfig && (
-                <div className="p-4 bg-orange-50/50 dark:bg-orange-950/10 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-orange-800 dark:text-orange-400">Alerta de Estoque Baixo</p>
-                    <p className="text-xs text-slate-500">Avisar quando houver menos de:</p>
+                <div className="p-6 bg-amber-50/30 dark:bg-amber-900/10 flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm font-black text-amber-700 dark:text-amber-400">Alerta de Estoque</p>
+                    <p className="text-xs text-slate-500 font-medium">Avisar com disponibilidade menor que:</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <input type="number" value={lowStockThreshold} onChange={e => onChangeLowStock(parseInt(e.target.value) || 0)}
-                      className="w-16 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-10 px-3 text-center font-bold outline-none focus:ring-2 focus:ring-primary" />
-                    <span className="text-sm font-medium text-slate-500">itens</span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <input 
+                      type="number" 
+                      value={lowStockThreshold} 
+                      onChange={e => onChangeLowStock(parseInt(e.target.value) || 0)}
+                      className="w-16 bg-white dark:bg-slate-800 border-2 border-amber-200 dark:border-amber-900/40 rounded-xl h-12 text-center font-black text-amber-700 dark:text-amber-400 outline-none focus:ring-2 focus:ring-amber-500" 
+                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">unid.</span>
                   </div>
                 </div>
               )}

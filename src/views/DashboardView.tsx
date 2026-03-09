@@ -57,81 +57,85 @@ export const DashboardView = ({
   ] as const;
 
   return (
-    <div className="p-4 space-y-6 pb-24">
-      <div className="pt-1">
-        <h2 className="text-2xl font-bold">Visão Geral</h2>
-        <p className="text-slate-500 text-sm mt-0.5">Resumo operacional da Bytex</p>
+    <div className="p-6 space-y-10 pb-32">
+      <div className="pt-2">
+        <h2 className="text-2xl font-black tracking-tight">Visão Geral</h2>
+        <p className="text-slate-500 text-sm mt-1 font-medium">Resumo operacional da Bytex</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-4">
         {kpis.map((kpi, i) => (
           <motion.div key={kpi.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
             onClick={kpi.action}
-            className={cn(`bg-gradient-to-br ${kpi.color} rounded-2xl p-4 text-white shadow-lg`,
+            className={cn(`bg-gradient-to-br ${kpi.color} rounded-2xl p-5 text-white shadow-xl`,
               kpi.action && 'cursor-pointer hover:scale-[1.02] transition-transform active:scale-95')}
           >
-            <div className="flex items-center justify-between mb-3">
-              <kpi.icon className="w-5 h-5 opacity-80" />
-              {kpi.action && <ChevronRight className="w-4 h-4 opacity-60" />}
+            <div className="flex items-center justify-between mb-4">
+              <kpi.icon className="w-6 h-6 opacity-90" />
+              {kpi.action && <ChevronRight className="w-5 h-5 opacity-60" />}
             </div>
-            <p className="text-3xl font-extrabold leading-none">{kpi.value}</p>
-            <p className="text-xs mt-1 opacity-80 font-semibold">{kpi.label}</p>
-            <p className="text-[10px] mt-0.5 opacity-60">{kpi.sub}</p>
+            <p className="text-3xl font-black leading-none">{kpi.value}</p>
+            <p className="text-xs mt-2 opacity-90 font-bold uppercase tracking-wider">{kpi.label}</p>
+            <p className="text-[10px] mt-1 opacity-70 font-medium">{kpi.sub}</p>
           </motion.div>
         ))}
       </div>
 
       {activeOrders.length > 0 && (
-        <section className="space-y-3">
+        <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Ordens Ativas</h3>
-            <button onClick={() => onNavigate('orders')} className="text-xs text-primary font-semibold hover:underline">Ver todas</button>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ordens Ativas</h3>
+            <button onClick={() => onNavigate('orders')} className="text-xs text-primary font-bold hover:underline">Ver todas</button>
           </div>
-          {activeOrders.slice(0, 3).map(o => (
-            <Card key={o.id} onClick={() => onNavigate('orders')}
-              className="p-4 flex items-center gap-3 cursor-pointer hover:border-primary/40 transition-colors">
-              <div className={cn('size-10 rounded-lg flex items-center justify-center shrink-0',
-                o.status === 'in_progress' ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/20')}>
-                <Laptop className="w-5 h-5" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold truncate">{o.customerName}</p>
-                <p className="text-xs text-slate-500 truncate">{o.device}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="font-bold text-sm">R$ {o.value.toFixed(0)}</p>
-                <p className={cn('text-[10px] font-bold uppercase',
-                  o.status === 'in_progress' ? 'text-primary' : o.status === 'ready' ? 'text-emerald-500' : 'text-amber-500')}>
-                  {o.status === 'budget' ? 'Orçamento' : o.status === 'approval' ? 'Aprovação' : o.status === 'in_progress' ? 'Em reparo' : 'Pronto'}
-                </p>
-              </div>
-            </Card>
-          ))}
+          <div className="space-y-3">
+            {activeOrders.slice(0, 3).map(o => (
+              <Card key={o.id} onClick={() => onNavigate('orders')}
+                className="p-5 flex items-center gap-4 cursor-pointer hover:border-primary/40 transition-all active:scale-[0.98]">
+                <div className={cn('size-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm',
+                  o.status === 'in_progress' ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/20')}>
+                  <Laptop className="w-6 h-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-base truncate">{o.customerName}</p>
+                  <p className="text-xs text-slate-500 font-medium truncate">{o.device}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-extrabold text-sm mb-0.5">R$ {o.value.toFixed(0)}</p>
+                  <p className={cn('text-[10px] font-black uppercase tracking-tighter',
+                    o.status === 'in_progress' ? 'text-primary' : o.status === 'ready' ? 'text-emerald-500' : 'text-amber-500')}>
+                    {o.status === 'budget' ? 'Orçamento' : o.status === 'approval' ? 'Aprovação' : o.status === 'in_progress' ? 'Em reparo' : 'Pronto'}
+                  </p>
+                </div>
+              </Card>
+            ))}
+          </div>
         </section>
       )}
 
       {lowStockItems.length > 0 && (
-        <section className="space-y-3">
+        <section className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500">Estoque em Baixa</h3>
-            <button onClick={() => onNavigate('inventory')} className="text-xs text-primary font-semibold hover:underline">Ver estoque</button>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Alerta de Estoque</h3>
+            <button onClick={() => onNavigate('inventory')} className="text-xs text-primary font-bold hover:underline">Ver estoque</button>
           </div>
-          {lowStockItems.slice(0, 4).map(item => {
-            const Icon = ICON_MAP[item.iconKey] || Package;
-            return (
-              <Card key={item.id} className="p-4 flex items-center gap-4 border-red-200 dark:border-red-900/40 bg-red-50/30 dark:bg-red-900/10">
-                <div className="size-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 shrink-0"><Icon className="w-5 h-5" /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate text-sm">{item.name}</p>
-                  <p className="text-xs text-slate-500">{item.category}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="font-bold text-red-500">{item.stock} un.</p>
-                  <p className="text-[10px] text-red-400 font-medium">{item.stock === 0 ? 'Esgotado' : 'Baixo'}</p>
-                </div>
-              </Card>
-            );
-          })}
+          <div className="space-y-3">
+            {lowStockItems.slice(0, 4).map(item => {
+              const Icon = ICON_MAP[item.iconKey] || Package;
+              return (
+                <Card key={item.id} className="p-5 flex items-center gap-4 border-red-200 dark:border-red-900/40 bg-red-50/30 dark:bg-red-900/10">
+                  <div className="size-12 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-red-500 shrink-0 shadow-sm"><Icon className="w-6 h-6" /></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold truncate text-base">{item.name}</p>
+                    <p className="text-xs text-slate-500 font-medium">{item.category}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-extrabold text-red-500">R$ {item.stock} un.</p>
+                    <p className="text-[10px] text-red-400 font-black uppercase">{item.stock === 0 ? 'Esgotado' : 'Baixo'}</p>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </section>
       )}
 

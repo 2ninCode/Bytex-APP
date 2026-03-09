@@ -74,87 +74,93 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
           onClose={() => setModalItem(false)}
         />
       )}
-
-      <div className="p-4 space-y-6">
-        <div className="space-y-4">
-          <div className="flex gap-2">
+      <div className="p-6 space-y-8 pb-32">
+        <div className="space-y-6">
+          <div className="flex gap-3">
             <div className="relative group flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-primary transition-colors" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-6 h-6 group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="block w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500"
-                placeholder="Buscar componentes de TI..."
+                className="block w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500 font-medium"
+                placeholder="Buscar componentes..."
               />
             </div>
             <button
               onClick={() => setModalItem(null)}
-              className="shrink-0 h-12 w-12 flex items-center justify-center rounded-xl bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm"
+              className="shrink-0 h-14 w-14 flex items-center justify-center rounded-2xl bg-primary text-white hover:bg-primary/90 transition-all shadow-lg active:scale-95"
               title="Novo Item"
             >
-              <Plus className="w-6 h-6" />
+              <Plus className="w-8 h-8" />
             </button>
           </div>
 
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {CATEGORIES.map(cat => (
               <Button key={cat} variant={category === cat ? 'primary' : 'secondary'}
-                className="shrink-0" onClick={() => setCategory(cat)}>
+                className="shrink-0 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider" onClick={() => setCategory(cat)}>
                 {cat}
               </Button>
             ))}
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">ESTOQUE ATUAL</h2>
-            <span className="text-xs text-slate-400">{filtered.length} iten{filtered.length !== 1 ? 's' : ''}</span>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">ESTOQUE ATUAL</h2>
+            <span className="text-xs font-bold text-slate-400">{filtered.length} {filtered.length !== 1 ? 'ITENS' : 'ITEM'}</span>
           </div>
 
           {filtered.length === 0 ? (
-            <Card className="p-10 flex flex-col items-center text-center space-y-3">
-              <Search className="w-10 h-10 text-slate-300" />
-              <p className="font-semibold text-slate-500">Nenhum item encontrado</p>
-              <p className="text-sm text-slate-400">Tente outro termo ou categoria.</p>
+            <Card className="p-16 flex flex-col items-center text-center space-y-4">
+              <div className="size-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300">
+                <Search className="w-8 h-8" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-500">Nenhum item encontrado</p>
+                <p className="text-xs text-slate-400">Tente outro termo ou categoria.</p>
+              </div>
             </Card>
           ) : (
-            filtered.map(item => {
-              const Icon = ICON_MAP[item.iconKey] || Package;
-              const color = getStockColor(item.stock);
-              return (
-                <Card key={item.id} className="p-4 flex items-center gap-4">
-                  <div className="size-14 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <Icon className="w-8 h-8" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{item.name}</h3>
-                    <p className="text-sm text-slate-500 truncate">{item.desc}</p>
-                    <span className="text-[11px] font-medium text-slate-400">{item.category}</span>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={cn('font-bold', color)}>{item.stock} un.</p>
-                    <p className={cn('text-xs font-medium', item.stock === 0 ? 'text-red-400' : item.stock <= lowStockThreshold ? 'text-orange-400' : 'text-slate-400')}>
-                      {item.stock === 0 ? 'Fora de estoque' : item.stock <= lowStockThreshold ? 'Baixo estoque' : item.location}
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-1.5 shrink-0">
-                    <button onClick={() => setModalItem(item)}
-                      className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors" title="Editar">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDelete(item.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Remover">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </Card>
-              );
-            })
+            <div className="space-y-3">
+              {filtered.map(item => {
+                const Icon = ICON_MAP[item.iconKey] || Package;
+                const color = getStockColor(item.stock);
+                return (
+                  <Card key={item.id} className="p-5 flex items-center gap-5 hover:border-primary/30 transition-all active:scale-[0.99]">
+                    <div className="size-14 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-sm">
+                      <Icon className="w-8 h-8" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-base truncate">{item.name}</h3>
+                      <p className="text-xs text-slate-500 font-medium truncate mb-1">{item.desc}</p>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">{item.category}</span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={cn('font-black text-lg leading-none', color)}>{item.stock}</p>
+                      <p className={cn('text-[10px] font-black uppercase mt-1', item.stock === 0 ? 'text-red-400' : item.stock <= lowStockThreshold ? 'text-orange-400' : 'text-slate-400')}>
+                        {item.stock === 0 ? 'Esgotado' : item.stock <= lowStockThreshold ? 'Baixo' : item.location}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 shrink-0 ml-2">
+                      <button onClick={() => setModalItem(item)}
+                        className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all" title="Editar">
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                      <button onClick={() => handleDelete(item.id)}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all" title="Remover">
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
+
     </>
   );
 };
