@@ -3,20 +3,28 @@ import { motion } from 'motion/react';
 import { Send } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn } from '../ui/utils';
-import { Notification } from '../../types';
+import { Notification, Employee } from '../../types';
+import { Users } from 'lucide-react';
 
-export const SendNotificationModal = ({ onClose, onSend }: {
+export const SendNotificationModal = ({ onClose, onSend, employees }: {
   onClose: () => void,
-  onSend: (n: Notification) => void
+  onSend: (n: Notification) => void,
+  employees: Employee[]
 }) => {
   const [title, setTitle] = useState('');
   const [msg, setMsg] = useState('');
   const [type, setType] = useState<'info' | 'success' | 'warning'>('info');
+  const [targetId, setTargetId] = useState<string>('');
 
   const handleSend = () => {
     if (!title.trim() || !msg.trim()) return;
     onSend({
-      id: Date.now().toString(), title, message: msg, type, timestamp: new Date()
+      id: Date.now().toString(), 
+      title, 
+      message: msg, 
+      type, 
+      timestamp: new Date(),
+      targetEmployeeId: targetId || undefined
     });
     onClose();
   };
@@ -28,6 +36,24 @@ export const SendNotificationModal = ({ onClose, onSend }: {
         <h3 className="text-xl font-bold flex items-center gap-2">
           <Send className="w-5 h-5 text-primary" /> Enviar Notificação
         </h3>
+        <div>
+          <label className="text-xs text-slate-500 mb-1 block">Destinatário</label>
+          <div className="relative">
+            <select 
+              value={targetId} 
+              onChange={e => setTargetId(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 outline-none appearance-none font-medium"
+            >
+              <option value="">Avisar todos da equipe</option>
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.name}</option>
+              ))}
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <Users className="size-4" />
+            </div>
+          </div>
+        </div>
         <div>
           <label className="text-xs text-slate-500 mb-1 block">Título</label>
           <input type="text" value={title} onChange={e => setTitle(e.target.value)}

@@ -37,6 +37,7 @@ export interface Notification {
   message: string;
   type: 'info' | 'success' | 'warning';
   timestamp: Date;
+  targetEmployeeId?: string;
 }
 
 export interface InventoryItem {

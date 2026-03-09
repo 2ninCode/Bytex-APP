@@ -76,7 +76,7 @@ export const SettingsView = ({
       {showSalesReport && <SalesReportModal orders={orders} onClose={() => setShowSalesReport(false)} />}
       {showHistory && <ServiceHistoryModal orders={orders} onClose={() => setShowHistory(false)} />}
       {showEmployeeModal && <EmployeeManagementModal employees={employees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
-      {showNotifModal && <SendNotificationModal onClose={() => setShowNotifModal(false)} onSend={(n) => { onSendNotification(n); setShowNotifModal(false); }} />}
+      {showNotifModal && <SendNotificationModal employees={employees} onClose={() => setShowNotifModal(false)} onSend={(n) => { onSendNotification(n); setShowNotifModal(false); }} />}
 
       <div className="p-6 space-y-10 pb-32 max-w-2xl mx-auto">
         <div className="pt-2">

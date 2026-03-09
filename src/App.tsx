@@ -203,9 +203,39 @@ export default function App() {
     refreshPrices();
   };
 
+  // Realtime Notifications
+  useEffect(() => {
+    if (!supabase || !currentUser) return;
+    
+    const channel = supabase.channel('bytex-notifications');
+    
+    channel
+      .on('broadcast', { event: 'new-notification' }, ({ payload }) => {
+        const notif = payload as Notification;
+        // Only show if it matches current user or is for everyone
+        if (!notif.targetEmployeeId || notif.targetEmployeeId === currentUser.id) {
+          setNotifications(prev => [notif, ...prev]);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUser]);
+
   const sendNotification = (n: Notification) => {
-    setNotifications(prev => [n, ...prev]);
-    // In a real app, this would also push to Supabase realtime or a table
+    if (!supabase) return;
+    
+    const channel = supabase.channel('bytex-notifications');
+    channel.send({
+      type: 'broadcast',
+      event: 'new-notification',
+      payload: n
+    });
+    
+    // Also add locally if sender is a recipient
+    if (!n.targetEmployeeId || n.targetEmployeeId === currentUser?.id) {
+      setNotifications(prev => [n, ...prev]);
+    }
   };
 
   // Rendering logic
