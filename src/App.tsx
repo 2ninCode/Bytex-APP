@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Settings, 
-  ClipboardList, 
-  LayoutDashboard, 
-  Package, 
-  Calculator, 
+import {
+  Settings,
+  ClipboardList,
+  LayoutDashboard,
+  Package,
+  Calculator,
   User,
   LogOut,
   ChevronRight,
@@ -61,11 +61,11 @@ function cn(...inputs: ClassValue[]) {
 const getSupabaseClient = () => {
   const url = (import.meta as any).env.VITE_SUPABASE_URL;
   const key = (import.meta as any).env.VITE_SUPABASE_ANON_KEY;
-  
+
   if (!url || !key || url === 'https://your-project-url.supabase.co' || !url.startsWith('http')) {
     return null;
   }
-  
+
   try {
     return createClient(url, key);
   } catch (e) {
@@ -138,9 +138,9 @@ const BytexIcon = ({ className = '' }: { className?: string }) => (
     <polygon points="5,8 28,8 50,42 72,8 95,8 62,52 95,96 72,96 50,62 28,96 5,96 38,52"
       fill="url(#bx-right)" clipPath="url(#bx-right-clip)" />
     {/* Decorative dots – upper right */}
-    {[{cx:78,cy:6,r:2.5},{cx:85,cy:10,r:2},{cx:91,cy:15,r:1.6},{cx:82,cy:2,r:1.8},
-      {cx:88,cy:6,r:1.4},{cx:93,cy:10,r:1.1},{cx:95,cy:3,r:1.6},{cx:89,cy:0,r:1.2}]
-      .map((d,i) => <circle key={i} cx={d.cx} cy={d.cy} r={d.r} fill="#38bdf8" opacity={0.8-i*0.06} />)}
+    {[{ cx: 78, cy: 6, r: 2.5 }, { cx: 85, cy: 10, r: 2 }, { cx: 91, cy: 15, r: 1.6 }, { cx: 82, cy: 2, r: 1.8 },
+    { cx: 88, cy: 6, r: 1.4 }, { cx: 93, cy: 10, r: 1.1 }, { cx: 95, cy: 3, r: 1.6 }, { cx: 89, cy: 0, r: 1.2 }]
+      .map((d, i) => <circle key={i} cx={d.cx} cy={d.cy} r={d.r} fill="#38bdf8" opacity={0.8 - i * 0.06} />)}
   </svg>
 );
 
@@ -153,9 +153,9 @@ const Button = ({ children, className = '', variant = 'primary', ...props }: any
     danger: 'bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400',
     ghost: 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
   };
-  
+
   return (
-    <button 
+    <button
       className={cn(
         'flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all active:scale-95',
         variants[variant],
@@ -183,8 +183,8 @@ const NotificationToast = ({ notification, onDismiss }: any) => (
   >
     <div className={cn(
       "size-10 rounded-full flex items-center justify-center shrink-0",
-      notification.type === 'success' ? "bg-emerald-100 text-emerald-600" : 
-      notification.type === 'warning' ? "bg-amber-100 text-amber-600" : "bg-primary/10 text-primary"
+      notification.type === 'success' ? "bg-emerald-100 text-emerald-600" :
+        notification.type === 'warning' ? "bg-amber-100 text-amber-600" : "bg-primary/10 text-primary"
     )}>
       <Bell className="w-5 h-5" />
     </div>
@@ -410,14 +410,14 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const INITIAL_ITEMS: InventoryItem[] = [
-  { id: '1', iconKey: 'cpu',      name: 'Corsair Vengeance LPX 16GB RAM',  desc: 'DDR4 3200MHz C16 - Black',             stock: 15, location: 'Shelf A-12', category: 'Hardware' },
-  { id: '2', iconKey: 'database', name: 'Samsung 980 Pro 1TB NVMe SSD',    desc: 'PCIe Gen4 M.2 Internal SSD',           stock: 4,  location: 'Shelf B-03', category: 'Armazenamento' },
-  { id: '3', iconKey: 'flask',    name: 'Arctic Silver 5 Thermal Paste',   desc: 'High-Density Silver Polysynthetic',     stock: 42, location: 'Cabinet B',  category: 'Consumíveis' },
-  { id: '4', iconKey: 'router',   name: 'Ubiquiti UniFi 6 Lite AP',        desc: 'Dual-band Wi-Fi 6 Access Point',        stock: 0,  location: 'Shelf C-01', category: 'Hardware' },
-  { id: '5', iconKey: 'cable',    name: 'HDMI 2.1 Cable 3m',               desc: '8K High Speed Gold Plated',            stock: 85, location: 'Bin C-4',    category: 'Consumíveis' },
-  { id: '6', iconKey: 'cpu',      name: 'Intel Core i7-13700K',            desc: 'Raptor Lake 16-Core Processor',         stock: 3,  location: 'Shelf B-02', category: 'Hardware' },
-  { id: '7', iconKey: 'database', name: 'Kingston 32GB DDR5 5600MHz',      desc: 'ECC Registered Server Memory',          stock: 8,  location: 'Shelf A-08', category: 'Armazenamento' },
-  { id: '8', iconKey: 'flask',    name: 'Isopropyl Alcohol 99% 500ml',     desc: 'Electronics Cleaning Solvent',          stock: 12, location: 'Cabinet A',  category: 'Consumíveis' },
+  { id: '1', iconKey: 'cpu', name: 'Corsair Vengeance LPX 16GB RAM', desc: 'DDR4 3200MHz C16 - Black', stock: 15, location: 'Shelf A-12', category: 'Hardware' },
+  { id: '2', iconKey: 'database', name: 'Samsung 980 Pro 1TB NVMe SSD', desc: 'PCIe Gen4 M.2 Internal SSD', stock: 4, location: 'Shelf B-03', category: 'Armazenamento' },
+  { id: '3', iconKey: 'flask', name: 'Arctic Silver 5 Thermal Paste', desc: 'High-Density Silver Polysynthetic', stock: 42, location: 'Cabinet B', category: 'Consumíveis' },
+  { id: '4', iconKey: 'router', name: 'Ubiquiti UniFi 6 Lite AP', desc: 'Dual-band Wi-Fi 6 Access Point', stock: 0, location: 'Shelf C-01', category: 'Hardware' },
+  { id: '5', iconKey: 'cable', name: 'HDMI 2.1 Cable 3m', desc: '8K High Speed Gold Plated', stock: 85, location: 'Bin C-4', category: 'Consumíveis' },
+  { id: '6', iconKey: 'cpu', name: 'Intel Core i7-13700K', desc: 'Raptor Lake 16-Core Processor', stock: 3, location: 'Shelf B-02', category: 'Hardware' },
+  { id: '7', iconKey: 'database', name: 'Kingston 32GB DDR5 5600MHz', desc: 'ECC Registered Server Memory', stock: 8, location: 'Shelf A-08', category: 'Armazenamento' },
+  { id: '8', iconKey: 'flask', name: 'Isopropyl Alcohol 99% 500ml', desc: 'Electronics Cleaning Solvent', stock: 12, location: 'Cabinet A', category: 'Consumíveis' },
 ];
 
 const EMPTY_ITEM: Omit<InventoryItem, 'id'> = {
@@ -443,10 +443,12 @@ const InventoryItemModal = ({
   onClose: () => void;
 }) => {
   const [form, setForm] = useState<Omit<InventoryItem, 'id'>>(
-    item ? { name: item.name||'', desc: item.desc||'', stock: item.stock||0,
-               location: item.location||'', category: item.category||'Hardware',
-               iconKey: item.iconKey||'package' }
-         : { ...EMPTY_ITEM }
+    item ? {
+      name: item.name || '', desc: item.desc || '', stock: item.stock || 0,
+      location: item.location || '', category: item.category || 'Hardware',
+      iconKey: item.iconKey || 'package'
+    }
+      : { ...EMPTY_ITEM }
   );
   const isEdit = !!item?.id;
 
@@ -463,27 +465,27 @@ const InventoryItemModal = ({
         <div className="p-5 space-y-4 max-h-[65vh] overflow-y-auto">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-500">Nome do Item *</label>
-            <input value={form.name} onChange={e => setForm({...form, name: e.target.value})}
+            <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
               placeholder="Ex: Corsair 16GB DDR4" />
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-500">Descrição</label>
-            <input value={form.desc} onChange={e => setForm({...form, desc: e.target.value})}
+            <input value={form.desc} onChange={e => setForm({ ...form, desc: e.target.value })}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
               placeholder="Especificações do produto" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-500">Categoria</label>
-              <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary">
                 {ITEM_CATEGORIES.map(c => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-500">Ícone</label>
-              <select value={form.iconKey} onChange={e => setForm({...form, iconKey: e.target.value as any})}
+              <select value={form.iconKey} onChange={e => setForm({ ...form, iconKey: e.target.value as any })}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary">
                 {ICON_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
               </select>
@@ -492,12 +494,12 @@ const InventoryItemModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-500">Qtd. em Estoque</label>
-              <input type="number" min={0} value={form.stock} onChange={e => setForm({...form, stock: parseInt(e.target.value)||0})}
+              <input type="number" min={0} value={form.stock} onChange={e => setForm({ ...form, stock: parseInt(e.target.value) || 0 })}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-slate-500">Localização</label>
-              <input value={form.location} onChange={e => setForm({...form, location: e.target.value})}
+              <input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Ex: Shelf A-12" />
             </div>
@@ -784,17 +786,17 @@ const DashboardView = ({
 
 const OrderView = ({
   currentUser,
-  orders, 
-  onSelect, 
-  selectedOrderId, 
-  onBack, 
+  orders,
+  onSelect,
+  selectedOrderId,
+  onBack,
   onUpdateStatus,
   onAdd,
   onEdit,
   onDelete
-}: { 
+}: {
   currentUser: Employee,
-  orders: Order[], 
+  orders: Order[],
   onSelect: (id: string) => void,
   selectedOrderId: string | null,
   onBack: () => void,
@@ -830,8 +832,8 @@ const OrderView = ({
             </Card>
           ) : (
             orders.filter(o => o.status !== 'finished').map((order) => (
-              <Card 
-                key={order.id} 
+              <Card
+                key={order.id}
                 className="p-4 flex items-center gap-4 hover:border-primary/50 transition-colors cursor-pointer group"
                 onClick={() => onSelect(order.id)}
               >
@@ -852,13 +854,13 @@ const OrderView = ({
                   <p className="font-bold text-sm">R$ {order.value.toFixed(2)}</p>
                   <span className={cn(
                     "text-[10px] font-bold uppercase tracking-wider",
-                    order.status === 'finished' ? "text-emerald-500" : 
-                    order.status === 'in_progress' ? "text-primary" : "text-amber-500"
+                    order.status === 'finished' ? "text-emerald-500" :
+                      order.status === 'in_progress' ? "text-primary" : "text-amber-500"
                   )}>
-                    {order.status === 'budget' ? 'Orçamento' : 
-                     order.status === 'approval' ? 'Aprovação' : 
-                     order.status === 'in_progress' ? 'Em Reparo' : 
-                     order.status === 'ready' ? 'Pronto' : 'Finalizado'}
+                    {order.status === 'budget' ? 'Orçamento' :
+                      order.status === 'approval' ? 'Aprovação' :
+                        order.status === 'in_progress' ? 'Em Reparo' :
+                          order.status === 'ready' ? 'Pronto' : 'Finalizado'}
                   </span>
                 </div>
                 <ChevronRight className="text-slate-400 group-hover:text-primary transition-colors w-5 h-5" />
@@ -912,20 +914,20 @@ const OrderView = ({
           {steps.map((step, i, arr) => {
             const isFinishedStep = step.label === 'Finalizado';
             return (
-            <div key={i} className="flex gap-4 relative">
-              <div className="flex flex-col items-center">
-                <div className={cn(
-                  "z-10 flex h-8 w-8 items-center justify-center rounded-full border-2",
-                  step.status === 'done' ? 'bg-primary border-primary text-white' :
-                  step.status === 'active' && isFinishedStep ? 'bg-emerald-500 border-emerald-500 text-white' :
-                  step.status === 'active' ? 'bg-primary/10 border-primary text-primary' :
-                  'bg-transparent border-slate-300 dark:border-slate-700 text-slate-400'
-                )}>
-                  {step.status === 'done' ? <Check className="w-5 h-5" /> :
-                   step.status === 'active' && isFinishedStep ? (
-                     // Animated checkmark SVG when finalizado
-                     <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                       <style>{`
+              <div key={i} className="flex gap-4 relative">
+                <div className="flex flex-col items-center">
+                  <div className={cn(
+                    "z-10 flex h-8 w-8 items-center justify-center rounded-full border-2",
+                    step.status === 'done' ? 'bg-primary border-primary text-white' :
+                      step.status === 'active' && isFinishedStep ? 'bg-emerald-500 border-emerald-500 text-white' :
+                        step.status === 'active' ? 'bg-primary/10 border-primary text-primary' :
+                          'bg-transparent border-slate-300 dark:border-slate-700 text-slate-400'
+                  )}>
+                    {step.status === 'done' ? <Check className="w-5 h-5" /> :
+                      step.status === 'active' && isFinishedStep ? (
+                        // Animated checkmark SVG when finalizado
+                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                          <style>{`
                          @keyframes draw-check {
                            0% { stroke-dashoffset: 50; opacity: 0; }
                            30% { opacity: 1; }
@@ -937,30 +939,30 @@ const OrderView = ({
                            animation: draw-check 0.6s cubic-bezier(0.4,0,0.2,1) 0.1s forwards;
                          }
                        `}</style>
-                       <polyline points="4,13 9,18 20,6" className="check-path" />
-                     </svg>
-                   ) :
-                   step.status === 'active' ? (
-                     <RefreshCw className="w-5 h-5 animate-spin" />
-                   ) :
-                   <Box className="w-5 h-5" />}
+                          <polyline points="4,13 9,18 20,6" className="check-path" />
+                        </svg>
+                      ) :
+                        step.status === 'active' ? (
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                        ) :
+                          <Box className="w-5 h-5" />}
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div className={cn("w-0.5 h-10", step.status === 'done' ? 'bg-primary' : 'border-l-2 border-dashed border-slate-300 dark:border-slate-700')}></div>
+                  )}
                 </div>
-                {i < arr.length - 1 && (
-                  <div className={cn("w-0.5 h-10", step.status === 'done' ? 'bg-primary' : 'border-l-2 border-dashed border-slate-300 dark:border-slate-700')}></div>
-                )}
+                <div className="pb-6">
+                  <p className={cn("font-semibold",
+                    step.status === 'active' && isFinishedStep ? 'text-emerald-600 dark:text-emerald-400' :
+                      step.status === 'active' ? 'text-primary' : ''
+                  )}>{step.label}</p>
+                  <p className="text-sm text-slate-500">
+                    {step.status === 'done' ? 'Concluído' :
+                      step.status === 'active' && isFinishedStep ? '✅ Serviço finalizado!' :
+                        step.status === 'active' ? 'Em andamento' : 'Pendente'}
+                  </p>
+                </div>
               </div>
-              <div className="pb-6">
-                <p className={cn("font-semibold",
-                  step.status === 'active' && isFinishedStep ? 'text-emerald-600 dark:text-emerald-400' :
-                  step.status === 'active' ? 'text-primary' : ''
-                )}>{step.label}</p>
-                <p className="text-sm text-slate-500">
-                  {step.status === 'done' ? 'Concluído' :
-                   step.status === 'active' && isFinishedStep ? '✅ Serviço finalizado!' :
-                   step.status === 'active' ? 'Em andamento' : 'Pendente'}
-                </p>
-              </div>
-            </div>
             );
           })}
         </div>
@@ -976,7 +978,7 @@ const OrderView = ({
           <p className="text-sm text-slate-500 mb-2">{selectedOrder.customerEmail}</p>
           <p className="text-sm text-slate-500">{selectedOrder.customerPhone}</p>
         </Card>
-        
+
         <Card className="p-5">
           <div className="flex items-center gap-3 mb-4">
             <Laptop className="text-primary w-5 h-5" />
@@ -994,9 +996,9 @@ const OrderView = ({
         <div className="pt-4">
           <Button onClick={() => onUpdateStatus(selectedOrder.id, nextStatus)} className="w-full py-4 text-lg shadow-lg shadow-primary/20">
             Avançar Etapa: {
-              nextStatus === 'approval' ? 'Aprovar Orçamento' : 
-              nextStatus === 'in_progress' ? 'Iniciar Reparo' : 
-              nextStatus === 'ready' ? 'Concluir Reparo' : 'Finalizar Entrega'
+              nextStatus === 'approval' ? 'Aprovar Orçamento' :
+                nextStatus === 'in_progress' ? 'Iniciar Reparo' :
+                  nextStatus === 'ready' ? 'Concluir Reparo' : 'Finalizar Entrega'
             }
           </Button>
         </div>
@@ -1005,14 +1007,14 @@ const OrderView = ({
   );
 };
 
-const OrderForm = ({ 
-  order, 
-  onSave, 
-  onCancel 
-}: { 
-  order?: Partial<Order>, 
-  onSave: (data: Partial<Order>) => void, 
-  onCancel: () => void 
+const OrderForm = ({
+  order,
+  onSave,
+  onCancel
+}: {
+  order?: Partial<Order>,
+  onSave: (data: Partial<Order>) => void,
+  onCancel: () => void
 }) => {
   const [formData, setFormData] = useState({
     customerName: order?.customerName || '',
@@ -1026,7 +1028,7 @@ const OrderForm = ({
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
@@ -1037,15 +1039,15 @@ const OrderForm = ({
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-500">Nome do Cliente</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.customerName}
-                onChange={e => setFormData({...formData, customerName: e.target.value})}
+                onChange={e => setFormData({ ...formData, customerName: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Ex: João Silva"
               />
@@ -1053,20 +1055,20 @@ const OrderForm = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-500">E-mail</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   value={formData.customerEmail}
-                  onChange={e => setFormData({...formData, customerEmail: e.target.value})}
+                  onChange={e => setFormData({ ...formData, customerEmail: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
                   placeholder="joao@email.com"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-500">Telefone</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formData.customerPhone}
-                  onChange={e => setFormData({...formData, customerPhone: e.target.value})}
+                  onChange={e => setFormData({ ...formData, customerPhone: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
                   placeholder="(11) 99999-9999"
                 />
@@ -1074,10 +1076,10 @@ const OrderForm = ({
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-500">Dispositivo</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={formData.device}
-                onChange={e => setFormData({...formData, device: e.target.value})}
+                onChange={e => setFormData({ ...formData, device: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Ex: MacBook Pro M1"
               />
@@ -1085,20 +1087,20 @@ const OrderForm = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-500">Nº de Série</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formData.serialNumber}
-                  onChange={e => setFormData({...formData, serialNumber: e.target.value})}
+                  onChange={e => setFormData({ ...formData, serialNumber: e.target.value })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
                   placeholder="S/N"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-500">Valor (R$)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   value={formData.value}
-                  onChange={e => setFormData({...formData, value: parseFloat(e.target.value) || 0})}
+                  onChange={e => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
                   placeholder="0.00"
                 />
@@ -1106,9 +1108,9 @@ const OrderForm = ({
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-500">Descrição do Problema</label>
-              <textarea 
+              <textarea
                 value={formData.problem}
-                onChange={e => setFormData({...formData, problem: e.target.value})}
+                onChange={e => setFormData({ ...formData, problem: e.target.value })}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
                 placeholder="Descreva o problema..."
               />
@@ -1130,39 +1132,45 @@ const CalculatorView = ({ onAddOrder }: { onAddOrder: (value: number, clientData
   const [activeTab, setActiveTab] = useState('Hardware');
 
   const services = [
-    { title: 'Hardware', label: 'Hardware / Manutenção', icon: Cpu, items: [
-      { id: 'h1', name: 'Limpeza preventiva (pó e oxidação)', price: 150 },
-      { id: 'h2', name: 'Troca de tela de notebook', price: 450 },
-      { id: 'h3', name: 'Upgrade de RAM ou SSD', price: 200 },
-      { id: 'h4', name: 'Troca de bateria', price: 220 },
-      { id: 'h5', name: 'Reparo de conector de carga', price: 180 },
-      { id: 'h6', name: 'Substituição de teclado / touchpad', price: 280 },
-      { id: 'h7', name: 'Reparo de placa-mãe (diagnóstico)', price: 350 },
-      { id: 'h8', name: 'Instalação de cooler / pasta térmica', price: 120 },
-      { id: 'h9', name: 'Troca de fonte de alimentação', price: 160 },
-    ]},
-    { title: 'Redes', label: 'Redes e Conectividade', icon: Router, items: [
-      { id: 'r1', name: 'Configuração de roteador Wi-Fi', price: 120 },
-      { id: 'r2', name: 'Cabeamento estruturado (por ponto)', price: 80 },
-      { id: 'r3', name: 'Instalação de repetidor / mesh', price: 100 },
-      { id: 'r4', name: 'Configuração de firewall / VPN', price: 200 },
-      { id: 'r5', name: 'Instalação de switch gerenciável', price: 150 },
-      { id: 'r6', name: 'Configuração de VLAN', price: 180 },
-      { id: 'r7', name: 'Diagnóstico de lentidão de rede', price: 90 },
-      { id: 'r8', name: 'Instalação de câmeras IP / CFTV', price: 250 },
-      { id: 'r9', name: 'Configuração de servidor NAS', price: 220 },
-    ]},
-    { title: 'Software', label: 'Software e Sistemas', icon: Terminal, items: [
-      { id: 's1', name: 'Formatação com Backup', price: 180 },
-      { id: 's2', name: 'Remoção de vírus / malware', price: 90 },
-      { id: 's3', name: 'Instalação Pacote Office / Windows', price: 110 },
-      { id: 's4', name: 'Configuração de e-mail corporativo', price: 100 },
-      { id: 's5', name: 'Migração de dados / clonagem de HD', price: 160 },
-      { id: 's6', name: 'Instalação e config. de ERP/CRM', price: 300 },
-      { id: 's7', name: 'Configuração de backup automatizado', price: 140 },
-      { id: 's8', name: 'Otimização de desempenho do sistema', price: 80 },
-      { id: 's9', name: 'Instalação de antivírus corporativo', price: 120 },
-    ]},
+    {
+      title: 'Hardware', label: 'Hardware / Manutenção', icon: Cpu, items: [
+        { id: 'h1', name: 'Limpeza preventiva (pó e oxidação)', price: 150 },
+        { id: 'h2', name: 'Troca de tela de notebook', price: 450 },
+        { id: 'h3', name: 'Upgrade de RAM ou SSD', price: 200 },
+        { id: 'h4', name: 'Troca de bateria', price: 220 },
+        { id: 'h5', name: 'Reparo de conector de carga', price: 180 },
+        { id: 'h6', name: 'Substituição de teclado / touchpad', price: 280 },
+        { id: 'h7', name: 'Reparo de placa-mãe (diagnóstico)', price: 350 },
+        { id: 'h8', name: 'Instalação de cooler / pasta térmica', price: 120 },
+        { id: 'h9', name: 'Troca de fonte de alimentação', price: 160 },
+      ]
+    },
+    {
+      title: 'Redes', label: 'Redes e Conectividade', icon: Router, items: [
+        { id: 'r1', name: 'Configuração de roteador Wi-Fi', price: 120 },
+        { id: 'r2', name: 'Cabeamento estruturado (por ponto)', price: 80 },
+        { id: 'r3', name: 'Instalação de repetidor / mesh', price: 100 },
+        { id: 'r4', name: 'Configuração de firewall / VPN', price: 200 },
+        { id: 'r5', name: 'Instalação de switch gerenciável', price: 150 },
+        { id: 'r6', name: 'Configuração de VLAN', price: 180 },
+        { id: 'r7', name: 'Diagnóstico de lentidão de rede', price: 90 },
+        { id: 'r8', name: 'Instalação de câmeras IP / CFTV', price: 250 },
+        { id: 'r9', name: 'Configuração de servidor NAS', price: 220 },
+      ]
+    },
+    {
+      title: 'Software', label: 'Software e Sistemas', icon: Terminal, items: [
+        { id: 's1', name: 'Formatação com Backup', price: 180 },
+        { id: 's2', name: 'Remoção de vírus / malware', price: 90 },
+        { id: 's3', name: 'Instalação Pacote Office / Windows', price: 110 },
+        { id: 's4', name: 'Configuração de e-mail corporativo', price: 100 },
+        { id: 's5', name: 'Migração de dados / clonagem de HD', price: 160 },
+        { id: 's6', name: 'Instalação e config. de ERP/CRM', price: 300 },
+        { id: 's7', name: 'Configuração de backup automatizado', price: 140 },
+        { id: 's8', name: 'Otimização de desempenho do sistema', price: 80 },
+        { id: 's9', name: 'Instalação de antivírus corporativo', price: 120 },
+      ]
+    },
   ];
 
   const toggleItem = (id: string) => {
@@ -1396,16 +1404,16 @@ const ServiceHistoryModal = ({ orders, onClose }: { orders: Order[], onClose: ()
 };
 
 const PriceTableModal = ({ prices, onSave, onClose }: {
-  prices: {id:string,category:string,name:string,price:number}[],
-  onSave: (id:string, price:number) => void,
+  prices: { id: string, category: string, name: string, price: number }[],
+  onSave: (id: string, price: number) => void,
   onClose: () => void
 }) => {
-  const [editPrices, setEditPrices] = useState<Record<string,number>>(
+  const [editPrices, setEditPrices] = useState<Record<string, number>>(
     Object.fromEntries(prices.map(p => [p.id, p.price]))
   );
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}}
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <h3 className="text-xl font-bold">Tabela de Preços</h3>
@@ -1421,7 +1429,7 @@ const PriceTableModal = ({ prices, onSave, onClose }: {
               <div className="flex items-center gap-1">
                 <span className="text-slate-400 text-sm">R$</span>
                 <input type="number" value={editPrices[p.id] ?? p.price}
-                  onChange={e => setEditPrices(prev => ({...prev,[p.id]:parseFloat(e.target.value)||0}))}
+                  onChange={e => setEditPrices(prev => ({ ...prev, [p.id]: parseFloat(e.target.value) || 0 }))}
                   className="w-24 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-9 px-2 text-right font-bold outline-none focus:ring-2 focus:ring-primary" />
               </div>
             </div>
@@ -1429,7 +1437,7 @@ const PriceTableModal = ({ prices, onSave, onClose }: {
         </div>
         <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
           <Button variant="secondary" onClick={onClose} className="flex-1">Cancelar</Button>
-          <Button onClick={() => { prices.forEach(p => { const v = editPrices[p.id]??p.price; if(v!==p.price) onSave(p.id,v); }); onClose(); }} className="flex-1">Salvar</Button>
+          <Button onClick={() => { prices.forEach(p => { const v = editPrices[p.id] ?? p.price; if (v !== p.price) onSave(p.id, v); }); onClose(); }} className="flex-1">Salvar</Button>
         </div>
       </motion.div>
     </div>
@@ -1449,7 +1457,7 @@ const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose: () =>
   const finishedRevenue = finished.reduce((acc, o) => acc + o.value, 0);
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}}
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <h3 className="text-xl font-bold">Relatório de Vendas</h3>
@@ -1488,7 +1496,7 @@ const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose: () =>
             <div>
               <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Ordens Recentes</p>
               <div className="space-y-2">
-                {orders.slice(0,5).map(o => (
+                {orders.slice(0, 5).map(o => (
                   <div key={o.id} className="flex items-center justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
                     <div>
                       <p className="font-semibold text-sm">{o.customerName}</p>
@@ -1546,7 +1554,7 @@ const EmployeeManagementModal = ({ employees, onClose, onRefresh }: { employees:
   };
 
   const handleDelete = async (id: string) => {
-    if(!window.confirm('Excluir funcionário?')) return;
+    if (!window.confirm('Excluir funcionário?')) return;
     setLoading(true);
     await supabase?.from('employees').delete().eq('id', id);
     onRefresh(); setLoading(false);
@@ -1554,7 +1562,7 @@ const EmployeeManagementModal = ({ employees, onClose, onRefresh }: { employees:
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
           <h3 className="text-xl font-bold">Gestão de Funcionários</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X className="w-5 h-5" /></button>
@@ -1564,47 +1572,47 @@ const EmployeeManagementModal = ({ employees, onClose, onRefresh }: { employees:
             <div className="space-y-4 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
               <h4 className="font-bold mb-4">{editing.id ? 'Editar Funcionário' : 'Novo Funcionário'}</h4>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-xs text-slate-500">Nome *</label><input type="text" value={editing.name||''} onChange={e=>setEditing({...editing,name:e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
-                <div><label className="text-xs text-slate-500">Função (Ex: Técnico)</label><input type="text" value={editing.jobTitle||''} onChange={e=>setEditing({...editing,jobTitle:e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
+                <div><label className="text-xs text-slate-500">Nome *</label><input type="text" value={editing.name || ''} onChange={e => setEditing({ ...editing, name: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
+                <div><label className="text-xs text-slate-500">Função (Ex: Técnico)</label><input type="text" value={editing.jobTitle || ''} onChange={e => setEditing({ ...editing, jobTitle: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
                 <div>
                   <label className="text-xs text-slate-500">Cargo de Acesso *</label>
-                  <select value={editing.role||'funcionario'} onChange={e=>setEditing({...editing,role:e.target.value as Role})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 outline-none">
+                  <select value={editing.role || 'funcionario'} onChange={e => setEditing({ ...editing, role: e.target.value as Role })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 outline-none">
                     <option value="funcionario">Funcionário (Restrito)</option>
                     <option value="gestor">Gestor</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
-                <div><label className="text-xs text-slate-500">ID de Login *</label><input type="text" value={editing.loginId||''} onChange={e=>setEditing({...editing,loginId:e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
-                <div><label className="text-xs text-slate-500">Senha *</label><input type="text" value={editing.password||''} onChange={e=>setEditing({...editing,password:e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
-                <div><label className="text-xs text-slate-500">Avatar URL</label><input type="text" value={editing.avatarUrl||''} onChange={e=>setEditing({...editing,avatarUrl:e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 placeholder:text-slate-400" placeholder="https://..." /></div>
-                <div><label className="text-xs text-slate-500">Email</label><input type="email" value={editing.email||''} onChange={e=>setEditing({...editing,email:e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
-                <div><label className="text-xs text-slate-500">Telefone</label><input type="text" value={editing.phone||''} onChange={e=>setEditing({...editing,phone:e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
+                <div><label className="text-xs text-slate-500">ID de Login *</label><input type="text" value={editing.loginId || ''} onChange={e => setEditing({ ...editing, loginId: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
+                <div><label className="text-xs text-slate-500">Senha *</label><input type="text" value={editing.password || ''} onChange={e => setEditing({ ...editing, password: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
+                <div><label className="text-xs text-slate-500">Avatar URL</label><input type="text" value={editing.avatarUrl || ''} onChange={e => setEditing({ ...editing, avatarUrl: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 placeholder:text-slate-400" placeholder="https://..." /></div>
+                <div><label className="text-xs text-slate-500">Email</label><input type="email" value={editing.email || ''} onChange={e => setEditing({ ...editing, email: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
+                <div><label className="text-xs text-slate-500">Telefone</label><input type="text" value={editing.phone || ''} onChange={e => setEditing({ ...editing, phone: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
               </div>
               <div className="flex gap-2 pt-4">
-                <Button variant="secondary" onClick={()=>setEditing(null)} className="flex-1">Cancelar</Button>
-                <Button onClick={handleSave} disabled={loading} className="flex-1">{loading?'Salvando...':'Salvar'}</Button>
+                <Button variant="secondary" onClick={() => setEditing(null)} className="flex-1">Cancelar</Button>
+                <Button onClick={handleSave} disabled={loading} className="flex-1">{loading ? 'Salvando...' : 'Salvar'}</Button>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <Button onClick={()=>setEditing({role:'funcionario'})} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"><UserPlus className="w-4 h-4 mr-2"/> Adicionar Funcionário</Button>
+              <Button onClick={() => setEditing({ role: 'funcionario' })} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white"><UserPlus className="w-4 h-4 mr-2" /> Adicionar Funcionário</Button>
               <div className="grid gap-3">
                 {employees.map(emp => (
                   <div key={emp.id} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-                      {emp.avatarUrl ? <img src={emp.avatarUrl} alt={emp.name} className="w-full h-full object-cover"/> : <User className="w-6 h-6 text-slate-400"/>}
+                      {emp.avatarUrl ? <img src={emp.avatarUrl} alt={emp.name} className="w-full h-full object-cover" /> : <User className="w-6 h-6 text-slate-400" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-bold truncate">{emp.name}</p>
-                        {emp.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0"/>}
-                        {emp.role === 'gestor' && <Shield className="w-3.5 h-3.5 text-blue-500 shrink-0"/>}
+                        {emp.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                        {emp.role === 'gestor' && <Shield className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
                       </div>
                       <p className="text-xs text-slate-500 truncate">{emp.jobTitle || 'Sem função'} • ID: {emp.loginId}</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                      <button onClick={()=>setEditing(emp)} className="p-2 text-slate-400 hover:text-primary transition-colors"><Pencil className="w-4 h-4"/></button>
-                      <button onClick={()=>handleDelete(emp.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                      <button onClick={() => setEditing(emp)} className="p-2 text-slate-400 hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(emp.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
                 ))}
@@ -1621,10 +1629,10 @@ const EmployeeManagementModal = ({ employees, onClose, onRefresh }: { employees:
 const SendNotificationModal = ({ employees, onClose, onSend }: { employees: Employee[], onClose: () => void, onSend: (n: Notification) => void }) => {
   const [title, setTitle] = useState('');
   const [msg, setMsg] = useState('');
-  const [type, setType] = useState<'info'|'success'|'warning'>('info');
+  const [type, setType] = useState<'info' | 'success' | 'warning'>('info');
 
   const handleSend = () => {
-    if(!title.trim() || !msg.trim()) return;
+    if (!title.trim() || !msg.trim()) return;
     onSend({
       id: Date.now().toString(), title, message: msg, type, timestamp: new Date()
     });
@@ -1633,13 +1641,13 @@ const SendNotificationModal = ({ employees, onClose, onSend }: { employees: Empl
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
-        <h3 className="text-xl font-bold flex items-center gap-2"><Send className="w-5 h-5 text-primary"/> Enviar Notificação</h3>
-        <div><label className="text-xs text-slate-500 mb-1 block">Título</label><input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 outline-none" placeholder="Ex: Aviso da Gerência" /></div>
-        <div><label className="text-xs text-slate-500 mb-1 block">Mensagem</label><textarea value={msg} onChange={e=>setMsg(e.target.value)} rows={3} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 outline-none resize-none" placeholder="Digite a mensagem..." /></div>
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
+        <h3 className="text-xl font-bold flex items-center gap-2"><Send className="w-5 h-5 text-primary" /> Enviar Notificação</h3>
+        <div><label className="text-xs text-slate-500 mb-1 block">Título</label><input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 outline-none" placeholder="Ex: Aviso da Gerência" /></div>
+        <div><label className="text-xs text-slate-500 mb-1 block">Mensagem</label><textarea value={msg} onChange={e => setMsg(e.target.value)} rows={3} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg p-3 outline-none resize-none" placeholder="Digite a mensagem..." /></div>
         <div className="flex gap-2">
-          {(['info','success','warning'] as const).map(t => (
-            <button key={t} onClick={()=>setType(t)} className={cn("flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-colors", type===t ? 'border-primary text-primary' : 'border-slate-200 dark:border-slate-700 text-slate-500')}>
+          {(['info', 'success', 'warning'] as const).map(t => (
+            <button key={t} onClick={() => setType(t)} className={cn("flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-colors", type === t ? 'border-primary text-primary' : 'border-slate-200 dark:border-slate-700 text-slate-500')}>
               {t === 'info' ? 'Aviso' : t === 'success' ? 'Sucesso' : 'Alerta'}
             </button>
           ))}
@@ -1664,35 +1672,43 @@ const SettingsView = ({ currentUser, employees, onRefreshEmployees, onSendNotifi
   const [showHistory, setShowHistory] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
-  const [servicePrices, setServicePrices] = useState<{id:string,category:string,name:string,price:number}[]>([]);
+  const [servicePrices, setServicePrices] = useState<{ id: string, category: string, name: string, price: number }[]>([]);
   useEffect(() => {
     if (!supabase) return;
-    supabase.from('service_prices').select('*').order('id').then(({data}) => { if(data) setServicePrices(data); });
+    supabase.from('service_prices').select('*').order('id').then(({ data }) => { if (data) setServicePrices(data); });
   }, []);
   const handleSavePrice = async (id: string, price: number) => {
-    if (supabase) await supabase.from('service_prices').update({price}).eq('id',id);
-    setServicePrices(prev => prev.map(p => p.id===id ? {...p,price} : p));
+    if (supabase) await supabase.from('service_prices').update({ price }).eq('id', id);
+    setServicePrices(prev => prev.map(p => p.id === id ? { ...p, price } : p));
   };
   const baseSections: any[] = [
-    { title: "Gestão de Negócios", items: [
-      { icon: CreditCard, label: "Tabela de Preços", desc: "Configurar valores dos serviços", highlight: true, action: () => setShowPriceTable(true) },
-      { icon: BarChart3, label: "Relatórios de Vendas", desc: "Resumo financeiro das ordens", action: () => setShowSalesReport(true) },
-      { icon: CheckCircle2, label: "Histórico de Serviços", desc: "Serviços concluídos", action: () => setShowHistory(true) },
-    ]},
-    { title: "Perfil do Técnico", items: [
-      { icon: User, label: "Dados Pessoais", desc: "" },
-      { icon: ShieldCheck, label: "Certificações e Habilidades", desc: "" },
-    ]},
-    { title: "Configurações do App", items: [
-      { icon: Moon, label: "Modo Escuro", isToggle: true, toggleVal: darkMode, action: onToggleDark, desc: "" },
-      { icon: Bell, label: "Notificações Sonoras", isToggle: true, toggleVal: soundEnabled, action: onToggleSound, desc: "" },
-      { icon: Globe, label: "Idioma (Português)", desc: "" },
-    ], lowStockConfig: true },
-    { title: "Suporte e Sobre", items: [
-      { icon: HelpCircle, label: "Central de Ajuda", desc: "" },
-      { icon: Info, label: "Sobre a Bytex Systems", desc: "" },
-      { icon: LogOut, label: "Sair da Conta", danger: true, action: onLogout },
-    ]},
+    {
+      title: "Gestão de Negócios", items: [
+        { icon: CreditCard, label: "Tabela de Preços", desc: "Configurar valores dos serviços", highlight: true, action: () => setShowPriceTable(true) },
+        { icon: BarChart3, label: "Relatórios de Vendas", desc: "Resumo financeiro das ordens", action: () => setShowSalesReport(true) },
+        { icon: CheckCircle2, label: "Histórico de Serviços", desc: "Serviços concluídos", action: () => setShowHistory(true) },
+      ]
+    },
+    {
+      title: "Perfil do Técnico", items: [
+        { icon: User, label: "Dados Pessoais", desc: "" },
+        { icon: ShieldCheck, label: "Certificações e Habilidades", desc: "" },
+      ]
+    },
+    {
+      title: "Configurações do App", items: [
+        { icon: Moon, label: "Modo Escuro", isToggle: true, toggleVal: darkMode, action: onToggleDark, desc: "" },
+        { icon: Bell, label: "Notificações Sonoras", isToggle: true, toggleVal: soundEnabled, action: onToggleSound, desc: "" },
+        { icon: Globe, label: "Idioma (Português)", desc: "" },
+      ], lowStockConfig: true
+    },
+    {
+      title: "Suporte e Sobre", items: [
+        { icon: HelpCircle, label: "Central de Ajuda", desc: "" },
+        { icon: Info, label: "Sobre a Bytex Systems", desc: "" },
+        { icon: LogOut, label: "Sair da Conta", danger: true, action: onLogout },
+      ]
+    },
   ];
 
   const sections = (() => {
@@ -1719,7 +1735,7 @@ const SettingsView = ({ currentUser, employees, onRefreshEmployees, onSendNotifi
       {showHistory && <ServiceHistoryModal orders={orders} onClose={() => setShowHistory(false)} />}
       {showEmployeeModal && <EmployeeManagementModal employees={employees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
       {showNotifModal && <SendNotificationModal employees={employees} onClose={() => setShowNotifModal(false)} onSend={(n) => { onSendNotification(n); setShowNotifModal(false); }} />}
-      
+
       <div className="p-6 space-y-8 pb-24">
         <div className="flex items-center gap-5">
           <div className="relative">
@@ -1750,12 +1766,12 @@ const SettingsView = ({ currentUser, employees, onRefreshEmployees, onSendNotifi
                 <div key={j} onClick={(item as any).action}
                   className={cn("flex items-center gap-4 p-4 transition-colors cursor-pointer border-b border-slate-200 dark:border-slate-800 last:border-0",
                     (item as any).highlight ? 'bg-primary/5 hover:bg-primary/10' :
-                    (item as any).danger ? 'hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500' :
-                    'hover:bg-slate-50 dark:hover:bg-slate-800')}>
+                      (item as any).danger ? 'hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500' :
+                        'hover:bg-slate-50 dark:hover:bg-slate-800')}>
                   <div className={cn("size-10 rounded-lg flex items-center justify-center shrink-0",
                     (item as any).highlight ? 'bg-primary text-white shadow-lg shadow-primary/20' :
-                    (item as any).danger ? 'bg-red-100 dark:bg-red-900/20' :
-                    'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300')}>
+                      (item as any).danger ? 'bg-red-100 dark:bg-red-900/20' :
+                        'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300')}>
                     <item.icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
@@ -1815,11 +1831,11 @@ export default function App() {
     if (!supabase) return;
     const { data } = await supabase.from('employees').select('*');
     if (data) setEmployees(data.map(d => ({
-        id: d.id, loginId: d.login_id, password: d.password,
-        name: d.name, cpf: d.cpf || '', phone: d.phone || '',
-        email: d.email || '', birthdate: d.birthdate || '',
-        jobTitle: d.job_title || '', role: d.role as Role,
-        avatarUrl: d.avatar_url || '',
+      id: d.id, loginId: d.login_id, password: d.password,
+      name: d.name, cpf: d.cpf || '', phone: d.phone || '',
+      email: d.email || '', birthdate: d.birthdate || '',
+      jobTitle: d.job_title || '', role: d.role as Role,
+      avatarUrl: d.avatar_url || '',
     })));
   };
 
@@ -1829,7 +1845,7 @@ export default function App() {
   useEffect(() => {
     if (currentUser) { setIsLoggedIn(true); setView('dashboard'); }
   }, []);
-  
+
   // --- Orders State ---
   const [orders, setOrders] = useState<Order[]>([
     {
@@ -1875,13 +1891,13 @@ export default function App() {
       gain.gain.setValueAtTime(0.25, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
       osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
-    } catch(e) { console.warn('Audio unavailable'); }
+    } catch (e) { console.warn('Audio unavailable'); }
   };
 
   // Load orders from Supabase
   useEffect(() => {
     if (!supabase) return;
-    supabase.from('orders').select('*').order('created_at', {ascending: false}).then(({data}) => {
+    supabase.from('orders').select('*').order('created_at', { ascending: false }).then(({ data }) => {
       if (data && data.length > 0) {
         setOrders(data.map(o => ({
           id: o.id, customerName: o.customer_name, customerEmail: o.customer_email,
@@ -1904,7 +1920,7 @@ export default function App() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
         (payload) => {
-          let title = ''; let message = ''; let type: 'info'|'success'|'warning' = 'info';
+          let title = ''; let message = ''; let type: 'info' | 'success' | 'warning' = 'info';
           if (payload.eventType === 'INSERT') {
             title = 'Novo Pedido';
             message = `Pedido criado para ${payload.new.customer_name || 'cliente'}.`;
@@ -1912,18 +1928,18 @@ export default function App() {
             setOrders(prev => {
               if (prev.some(o => o.id === payload.new.id)) return prev;
               const o = payload.new;
-              return [{ id:o.id, customerName:o.customer_name, customerEmail:o.customer_email, customerPhone:o.customer_phone, device:o.device, serialNumber:o.serial_number, problem:o.problem, value:Number(o.value), status:o.status, createdAt:o.created_at }, ...prev];
+              return [{ id: o.id, customerName: o.customer_name, customerEmail: o.customer_email, customerPhone: o.customer_phone, device: o.device, serialNumber: o.serial_number, problem: o.problem, value: Number(o.value), status: o.status, createdAt: o.created_at }, ...prev];
             });
           } else if (payload.eventType === 'UPDATE') {
             title = 'Pedido Atualizado';
             message = `Pedido #${payload.new.id} atualizado.`;
             type = 'info';
-            setOrders(prev => prev.map(o => o.id === payload.new.id ? {...o, status: payload.new.status} : o));
+            setOrders(prev => prev.map(o => o.id === payload.new.id ? { ...o, status: payload.new.status } : o));
           } else if (payload.eventType === 'DELETE') {
             setOrders(prev => prev.filter(o => o.id !== payload.old.id));
           }
           if (title) {
-            const n: Notification = { id: Math.random().toString(36).substr(2,9), title, message, type, timestamp: new Date() };
+            const n: Notification = { id: Math.random().toString(36).substr(2, 9), title, message, type, timestamp: new Date() };
             setNotifications(prev => [n, ...prev]);
             playNotificationSound(soundEnabled);
           }
