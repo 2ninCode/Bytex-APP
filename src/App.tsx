@@ -245,26 +245,16 @@ export default function App() {
           </div>
           <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => {}} 
-            className="size-11 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
+            className="size-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
           >
             <Bell className="size-6 transition-transform group-hover:rotate-12" />
             {notifications.length > 0 && (
-              <span className="absolute top-2.5 right-2.5 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm" />
+              <span className="absolute top-3 right-3 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm" />
             )}
           </button>
-          <div 
-            onClick={() => setCurrentView('settings')}
-            className="size-11 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-primary/20 overflow-hidden cursor-pointer hover:border-primary transition-all active:scale-95"
-          >
-            {currentUser.avatarUrl ? (
-              <img src={currentUser.avatarUrl} className="w-full h-full object-cover" />
-            ) : (
-              <User className="size-6 text-primary" />
-            )}
-          </div>
         </div>
       </header>
 
