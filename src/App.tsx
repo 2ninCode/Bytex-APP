@@ -1150,11 +1150,19 @@ const CalculatorView = ({ onAddOrder, prices }: {
   prices: { id: string, category: string, name: string, price: number }[]
 }) => {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState('Hardware');
+  
+  const categories = Array.from(new Set(prices.map(p => p.category)));
+  const [activeTab, setActiveTab] = useState('');
+
+  // Set initial tab based on available categories
+  useEffect(() => {
+    if (categories.length > 0 && !activeTab) {
+      setActiveTab(categories[0]);
+    }
+  }, [categories, activeTab]);
 
   const ICON_MAP_LOCAL: Record<string, any> = { 'Hardware': Cpu, 'Redes': Router, 'Software': Terminal };
 
-  const categories = Array.from(new Set(prices.map(p => p.category)));
   const services = categories.map(cat => ({
     title: cat,
     label: cat === 'Hardware' ? 'Hardware / Manutenção' : cat === 'Redes' ? 'Redes e Conectividade' : cat === 'Software' ? 'Software e Sistemas' : cat,
@@ -1164,9 +1172,14 @@ const CalculatorView = ({ onAddOrder, prices }: {
 
   if (prices.length === 0) {
     return (
-      <div className="p-10 text-center space-y-4">
-        <Calculator className="w-12 h-12 mx-auto text-slate-300 opacity-50" />
-        <p className="text-slate-500 font-medium">Carregando tabela de preços...</p>
+      <div className="p-12 text-center space-y-6">
+        <div className="size-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto">
+          <Calculator className="w-10 h-10 text-slate-300" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-bold">Nenhum Serviço Encontrado</h3>
+          <p className="text-slate-500 text-sm max-w-xs mx-auto">Certifique-se de que a tabela de preços foi configurada no banco de dados.</p>
+        </div>
       </div>
     );
   }
@@ -1180,7 +1193,7 @@ const CalculatorView = ({ onAddOrder, prices }: {
   }, 0);
 
   const selectedCount = Object.values(selectedItems).filter(Boolean).length;
-  const activeSection = services.find(s => s.title === activeTab)!;
+  const activeSection = services.find(s => s.title === activeTab) || services[0];
 
   const [pendingTotal, setPendingTotal] = useState<number | null>(null);
   const [clientData, setClientData] = useState({ name: '', device: '', problem: '' });
@@ -1915,7 +1928,9 @@ export default function App() {
 
     // Load service prices
     supabase.from('service_prices').select('*').order('id').then(({ data, error }) => {
-      if (data && !error) setServicePrices(data);
+      if (data && !error) {
+        setServicePrices(data.map(p => ({ ...p, price: Number(p.price) })));
+      }
     });
   }, []);
 
