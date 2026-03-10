@@ -17,13 +17,15 @@ import { SendNotificationModal } from '../components/modals/SendNotificationModa
 export const SettingsView = ({
   currentUser, employees, onRefreshEmployees, onSendNotification, onLogout,
   darkMode, onToggleDark, soundEnabled, onToggleSound, orders,
-  lowStockThreshold, onChangeLowStock, servicePrices, onSavePrice
+  lowStockThreshold, onChangeLowStock, servicePrices, onSavePrice,
+  onOpenNotifications
 }: {
   currentUser: Employee, employees: Employee[], onRefreshEmployees: () => void, onSendNotification: (n: Notification) => void,
   onLogout: () => void, darkMode: boolean, onToggleDark: () => void,
   soundEnabled: boolean, onToggleSound: () => void, orders: Order[],
   lowStockThreshold: number, onChangeLowStock: (v: number) => void,
-  servicePrices: ServicePrice[], onSavePrice: (id: string, price: number) => void
+  servicePrices: ServicePrice[], onSavePrice: (id: string, price: number) => void,
+  onOpenNotifications?: () => void
 }) => {
   const [showPriceTable, setShowPriceTable] = useState(false);
   const [showSalesReport, setShowSalesReport] = useState(false);
@@ -55,6 +57,7 @@ export const SettingsView = ({
       isSettings: true,
       items: [
         { icon: Moon, label: "Modo Escuro", desc: "Interface noturna", isToggle: true, toggleVal: darkMode, action: onToggleDark },
+        { icon: Bell, label: "Ver Notificações", desc: "Histórico de avisos", action: onOpenNotifications },
         { icon: Bell, label: "Sons do Sistema", desc: "Alertas sonoros", isToggle: true, toggleVal: soundEnabled, action: onToggleSound },
       ],
       lowStockConfig: true

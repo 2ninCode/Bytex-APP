@@ -280,8 +280,8 @@ export default function App() {
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Início' },
     { id: 'inventory', icon: Package, label: 'Estoque' },
+    { id: 'notifications', icon: Bell, label: 'Avisos' },
     { id: 'orders', icon: ClipboardList, label: 'Ordens' },
-    { id: 'calculator', icon: Calculator, label: 'Orçador' },
     { id: 'settings', icon: Settings, label: 'Ajustes' },
   ] as const;
 
@@ -377,6 +377,7 @@ export default function App() {
                 onChangeLowStock={setLowStockThreshold}
                 servicePrices={servicePrices}
                 onSavePrice={handleSavePrice}
+                onOpenNotifications={() => setShowNotificationsModal(true)}
               />
             )}
           </motion.div>
@@ -390,17 +391,27 @@ export default function App() {
           return (
             <button
               key={item.id}
-              onClick={() => { setCurrentView(item.id); setSelectedOrderId(null); }}
+              onClick={() => { 
+                if (item.id === 'notifications') {
+                  setShowNotificationsModal(true);
+                } else {
+                  setCurrentView(item.id); 
+                  setSelectedOrderId(null); 
+                }
+              }}
               className={cn(
                 "flex flex-col items-center justify-center gap-1.5 transition-all duration-300 relative px-4",
-                isActive ? "text-primary transition-transform" : "text-slate-400 hover:text-slate-600"
+                isActive || (item.id === 'notifications' && showNotificationsModal) ? "text-primary transition-transform" : "text-slate-400 hover:text-slate-600"
               )}
             >
               <div className={cn(
                 "p-2.5 rounded-2xl transition-all duration-300 transform",
-                isActive ? "bg-primary text-white shadow-lg shadow-primary/30 -translate-y-1 scale-110" : "bg-transparent"
+                isActive || (item.id === 'notifications' && showNotificationsModal) ? "bg-primary text-white shadow-lg shadow-primary/30 -translate-y-1 scale-110" : "bg-transparent"
               )}>
                 <item.icon className="size-6" strokeWidth={isActive ? 2.5 : 2} />
+                {item.id === 'notifications' && notifications.length > 0 && (
+                  <span className="absolute top-1 right-1 size-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-950 animate-pulse" />
+                )}
               </div>
               <span className={cn(
                 "text-[9px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
