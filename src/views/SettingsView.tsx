@@ -74,7 +74,7 @@ export const SettingsView = ({
       show: true,
       items: [
         { icon: HelpCircle, label: "Suporte Bytex", desc: "Precisa de ajuda?" },
-        { icon: Info, label: "Versão do App", desc: "v2.1.0 Premium" },
+        { icon: Info, label: "Versão do App", desc: "V3.1" },
         { icon: LogOut, label: "Sair da Conta", desc: "Encerrar sessão", danger: true, action: onLogout },
       ]
     }
