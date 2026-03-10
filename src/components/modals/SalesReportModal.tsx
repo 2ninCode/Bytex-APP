@@ -1,198 +1,435 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { X, BarChart3, Calendar, TrendingUp, TrendingDown, Target, User, ChevronRight, Package, DollarSign } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { X, BarChart3, Calendar, TrendingUp, TrendingDown, Target, Package, DollarSign, Download, Filter, Search, Smartphone, Laptop, CheckCircle2, Clock } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { cn } from '../ui/utils';
-import { Order } from '../../types';
+import { Order, OrderStatus } from '../../types';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, BarChart, Bar, Legend
+} from 'recharts';
+import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO, startOfMonth, startOfYear, subYears } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-type Period = '7d' | '30d' | '90d';
+type Period = '7d' | '30d' | '90d' | 'year' | 'all';
+
+const STATUS_COLORS: Record<OrderStatus, string> = {
+  budget: '#f59e0b',
+  approval: '#d97706',
+  in_progress: '#0f68e6',
+  ready: '#10b981',
+  finished: '#059669'
+};
+
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  budget: 'Orçamento',
+  approval: 'Aprovação',
+  in_progress: 'Em Reparo',
+  ready: 'Pronto',
+  finished: 'Finalizado'
+};
 
 export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose: () => void }) => {
   const [period, setPeriod] = useState<Period>('30d');
-
-  const getFilteredOrders = (p: Period) => {
-    const now = new Date();
-    const startDate = new Date();
-    if (p === '7d') startDate.setDate(now.getDate() - 7);
-    else if (p === '30d') startDate.setDate(now.getDate() - 30);
-    else if (p === '90d') startDate.setDate(now.getDate() - 90);
-    
-    return orders.filter(o => new Date(o.createdAt) >= startDate);
-  };
-
-  const getPreviousPeriodOrders = (p: Period) => {
-    const now = new Date();
-    const startDate = new Date();
-    const endDate = new Date();
-    
-    if (p === '7d') {
-      startDate.setDate(now.getDate() - 14);
-      endDate.setDate(now.getDate() - 7);
-    } else if (p === '30d') {
-      startDate.setDate(now.getDate() - 60);
-      endDate.setDate(now.getDate() - 30);
-    } else if (p === '90d') {
-      startDate.setDate(now.getDate() - 180);
-      endDate.setDate(now.getDate() - 90);
-    }
-    
-    return orders.filter(o => {
-      const d = new Date(o.createdAt);
-      return d >= startDate && d < endDate;
-    });
-  };
-
-  const currentOrders = getFilteredOrders(period);
-  const prevOrders = getPreviousPeriodOrders(period);
-
-  const currentRevenue = currentOrders
-    .filter(o => o.status === 'finished')
-    .reduce((acc, o) => acc + o.value, 0);
-    
-  const prevRevenue = prevOrders
-    .filter(o => o.status === 'finished')
-    .reduce((acc, o) => acc + o.value, 0);
-
-  const growth = prevRevenue === 0 ? 100 : ((currentRevenue - prevRevenue) / prevRevenue) * 100;
-  const isPositive = growth >= 0;
-
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
-  const stats = [
-    { label: 'Serviços', val: currentOrders.length, sub: 'total no período', icon: Package, color: 'text-primary bg-primary/10' },
-    { label: 'Ticket Médio', val: `R$ ${(currentRevenue / (currentOrders.filter(o => o.status === 'finished').length || 1)).toFixed(0)}`, sub: 'por serviço concluído', icon: Target, color: 'text-violet-500 bg-violet-50' },
-  ];
+  // --- Filtering Logic ---
+  const filteredOrders = useMemo(() => {
+    const now = new Date();
+    let startDate = new Date(0); // Epoch
 
-  const statusMetrics = [
-    { label: 'Finalizado', count: currentOrders.filter(o => o.status === 'finished').length, color: 'bg-emerald-500' },
-    { label: 'Em Reparo', count: currentOrders.filter(o => o.status === 'in_progress').length, color: 'bg-primary' },
-    { label: 'Aguardando', count: currentOrders.filter(o => ['budget', 'approval', 'ready'].includes(o.status)).length, color: 'bg-amber-400' },
-  ];
+    if (period === '7d') startDate = subDays(now, 7);
+    else if (period === '30d') startDate = subDays(now, 30);
+    else if (period === '90d') startDate = subDays(now, 90);
+    else if (period === 'year') startDate = startOfYear(now);
+
+    return orders.filter(o => {
+      const dateValid = period === 'all' || new Date(o.createdAt) >= startDate;
+      const statusValid = statusFilter === 'all' || o.status === statusFilter;
+      const searchValid = !searchTerm || 
+        o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.device.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.id.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return dateValid && statusValid && searchValid;
+    });
+  }, [orders, period, statusFilter, searchTerm]);
+
+  const priorFilteredOrders = useMemo(() => {
+    if (period === 'all') return []; // No prior for 'all'
+    const now = new Date();
+    let startDate = new Date();
+    let priorStartDate = new Date();
+    
+    if (period === '7d') { startDate = subDays(now, 7); priorStartDate = subDays(now, 14); }
+    else if (period === '30d') { startDate = subDays(now, 30); priorStartDate = subDays(now, 60); }
+    else if (period === '90d') { startDate = subDays(now, 90); priorStartDate = subDays(now, 180); }
+    else if (period === 'year') { startDate = startOfYear(now); priorStartDate = subYears(startOfYear(now), 1); }
+
+    return orders.filter(o => {
+      const d = new Date(o.createdAt);
+      return d >= priorStartDate && d < startDate;
+    });
+  }, [orders, period]);
+
+  // --- KPIs ---
+  const currentRevenue = filteredOrders.filter(o => o.status === 'finished').reduce((acc, o) => acc + o.value, 0);
+  const priorRevenue = priorFilteredOrders.filter(o => o.status === 'finished').reduce((acc, o) => acc + o.value, 0);
+  const totalServices = filteredOrders.length;
+  const finishedServices = filteredOrders.filter(o => o.status === 'finished').length;
+  const ticketMedio = finishedServices > 0 ? currentRevenue / finishedServices : 0;
+  
+  const revenueGrowth = priorRevenue === 0 ? 100 : ((currentRevenue - priorRevenue) / priorRevenue) * 100;
+  const isRevenuePositive = revenueGrowth >= 0;
+
+  // --- Chart Data Processing ---
+  const revenueOverTime = useMemo(() => {
+    // Group by day or month depending on period
+    const formatStr = period === 'year' || period === 'all' ? 'MMM yy' : 'dd/MM';
+    const grouped = filteredOrders.filter(o => o.status === 'finished').reduce((acc, order) => {
+      const dateStr = format(parseISO(order.createdAt), formatStr, { locale: ptBR });
+      acc[dateStr] = (acc[dateStr] || 0) + order.value;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(grouped).map(([date, value]) => ({ date, value })).sort();
+    // (Note: simple string sort might misorder days across months, but for <90d M/D is okay. 
+    // Usually we build a chronological array first, but keeping it simple for now)
+  }, [filteredOrders, period]);
+
+  const statusDistribution = useMemo(() => {
+    const grouped = filteredOrders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {} as Record<OrderStatus, number>);
+
+    return Object.entries(grouped).map(([status, count]) => ({
+      name: STATUS_LABELS[status as OrderStatus],
+      value: count,
+      color: STATUS_COLORS[status as OrderStatus]
+    }));
+  }, [filteredOrders]);
+
+  // Devices (Top 5)
+  const deviceDistribution = useMemo(() => {
+    const grouped = filteredOrders.reduce((acc, order) => {
+      // Simplistic categorization based on keywords
+      const dev = order.device.toLowerCase();
+      let cat = 'Outros';
+      if (dev.includes('iphone') || dev.includes('sams') || dev.includes('moto')) cat = 'Smartphones';
+      else if (dev.includes('mac') || dev.includes('note') || dev.includes('dell')) cat = 'Laptops';
+      else if (dev.includes('pc') || dev.includes('desktop')) cat = 'Desktops';
+      
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return Object.entries(grouped).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
+  }, [filteredOrders]);
+
+
+  // Helper for rendering customized recharts tooltip
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700">
+          <p className="text-slate-500 text-xs font-bold mb-1">{label}</p>
+          <p className="text-primary font-black text-lg">R$ {payload[0].value.toFixed(2)}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[200] bg-slate-100/80 dark:bg-slate-950/90 backdrop-blur-xl flex flex-col md:p-6" onClick={onClose}>
       <motion.div 
-        initial={{ opacity: 0, y: 100 }} 
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 100 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        className="bg-white dark:bg-slate-900 w-full h-full md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden max-w-7xl mx-auto border border-slate-200/50 dark:border-slate-800"
+      >
         
-        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 z-20">
+        {/* Header Setup */}
+        <div className="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 z-20 shrink-0">
           <div>
-            <h3 className="text-2xl font-black tracking-tight flex items-center gap-3">
-              <BarChart3 className="size-8 text-primary" /> Relatório Estratégico
+            <h3 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+              <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <BarChart3 className="size-6" />
+              </div>
+              Inteligência de Vendas
             </h3>
-            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Inteligência Financeira Bytex</p>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-2 md:pl-16">Analytics e Performance Bytex</p>
           </div>
-          <button onClick={onClose} className="size-12 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-800">
-            <X className="size-6 text-slate-400" />
-          </button>
+          
+          <div className="flex items-center gap-3">
+            <Button variant="secondary" className="hidden md:flex items-center gap-2 h-12 rounded-xl">
+              <Download className="size-4 text-slate-500" /> Exportar (PDF)
+            </Button>
+            <button onClick={onClose} className="size-12 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-800">
+              <X className="size-6 text-slate-400" />
+            </button>
+          </div>
         </div>
 
-        {/* Period Selector - Fixed below header */}
-        <div className="px-8 py-4 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 z-10 flex justify-center shadow-sm">
-          <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl w-fit">
-            {(['7d', '30d', '90d'] as const).map(p => (
+        {/* Action Bar (Filters) */}
+        <div className="px-6 md:px-8 py-4 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shrink-0 overflow-x-auto no-scrollbar">
+          
+          {/* Period Tabs */}
+          <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl w-fit shrink-0">
+            {(['7d', '30d', '90d', 'year', 'all'] as const).map(p => (
               <button 
                 key={p} 
                 onClick={() => setPeriod(p)}
                 className={cn(
-                  "px-6 py-2.5 rounded-xl text-xs font-black transition-all lowercase tracking-widest",
+                  "px-5 py-2.5 rounded-xl text-xs font-black transition-all uppercase tracking-widest",
                   period === p ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
                 )}
               >
-                Últimos {p === '7d' ? '7 dias' : p === '30d' ? '30 dias' : '90 dias'}
+                {p === '7d' ? '7 Dias' : p === '30d' ? '30 Dias' : p === '90d' ? 'Trimestre' : p === 'year' ? 'Ano' : 'Tudo'}
               </button>
             ))}
           </div>
-        </div>
 
-        <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 min-h-0">
-          {/* Revenue Card */}
-          <Card className="p-8 bg-gradient-to-br from-primary to-violet-700 text-white border-none shadow-2xl shadow-primary/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-6 opacity-10">
-              <TrendingUp className="size-32 rotate-12" />
+          {/* Search & Status Filters */}
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Buscar OS, cliente..." 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-primary w-48 md:w-64 transition-all"
+              />
             </div>
-            <div className="relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">Faturamento Líquido</p>
-              <div className="flex items-end gap-3 mb-6">
-                <h4 className="text-5xl font-black tracking-tighter">R$ {currentRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h4>
-              </div>
-              <div className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold backdrop-blur-md",
-                isPositive ? "bg-emerald-400/20 text-emerald-300" : "bg-red-400/20 text-red-300"
-              )}>
-                {isPositive ? <TrendingUp className="size-4" /> : <TrendingDown className="size-4" />}
-                <span>{isPositive ? '+' : ''}{growth.toFixed(1)}% em relação ao período anterior</span>
-              </div>
-            </div>
-          </Card>
-
-          {/* KPI Grid */}
-          <div className="grid grid-cols-2 gap-4">
-            {stats.map((s, i) => (
-              <Card key={i} className="p-5 flex items-start gap-4 border-none bg-slate-50 dark:bg-slate-800/40">
-                <div className={cn("size-12 rounded-2xl flex items-center justify-center shrink-0", s.color)}>
-                  <s.icon className="size-6" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{s.label}</p>
-                  <p className="font-black text-xl">{s.val}</p>
-                  <p className="text-[10px] text-slate-500 font-medium">{s.sub}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          {/* Status Breakdown */}
-          <div className="space-y-4">
-            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Distribuição de Status</h5>
-            <div className="grid grid-cols-3 gap-3">
-              {statusMetrics.map((m, i) => (
-                <Card key={i} className="p-4 text-center border-none bg-slate-50 dark:bg-slate-800/40 relative group overflow-hidden">
-                  <div className={cn("absolute bottom-0 left-0 h-1 transition-all group-hover:h-full group-hover:opacity-5", m.color)} style={{ width: '100%' }} />
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mb-1">{m.label}</p>
-                  <p className="text-2xl font-black">{m.count}</p>
-                </Card>
+            
+            <select 
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value as any)}
+              className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">Todos os Status</option>
+              {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
               ))}
-            </div>
-          </div>
-
-          {/* Recent Performance List */}
-          <div className="space-y-4">
-            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Últimos Lançamentos</h5>
-            <div className="space-y-3">
-              {currentOrders.slice(0, 4).map(o => (
-                <div key={o.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 group hover:border-primary/30 transition-all">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="size-11 rounded-xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
-                      <Calendar className="size-5" />
-                    </div>
-                    <div className="truncate">
-                      <p className="font-bold text-sm truncate">{o.customerName}</p>
-                      <p className="text-[10px] text-slate-400 font-medium">{new Date(o.createdAt).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-black text-sm text-primary">R$ {o.value.toFixed(2)}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">OS #{o.id.split('-').pop()}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            </select>
           </div>
         </div>
 
-        <div className="p-8 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800">
-          <Button onClick={onClose} className="w-full h-14 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-            Concluir Análise
-          </Button>
+        {/* Scrollable Content */}
+        <div className="p-6 md:p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 min-h-0 bg-slate-50 dark:bg-slate-900/50">
+          
+          {/* TOP Level KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+            <Card className="p-6 bg-gradient-to-br from-primary to-violet-700 text-white border-none shadow-xl shadow-primary/20 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-500">
+                <DollarSign className="size-24" />
+              </div>
+              <div className="relative z-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 mb-2">Faturamento Líquido</p>
+                <h4 className="text-3xl md:text-4xl font-black tracking-tighter mb-4">R$ {currentRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h4>
+                {period !== 'all' && (
+                  <div className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-md",
+                    isRevenuePositive ? "bg-emerald-400/20 text-emerald-300" : "bg-red-400/20 text-red-300"
+                  )}>
+                    {isRevenuePositive ? <TrendingUp className="size-3.5" /> : <TrendingDown className="size-3.5" />}
+                    <span>{isRevenuePositive ? '+' : ''}{revenueGrowth.toFixed(1)}% vs anterior</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-6 flex flex-col justify-between border-none shadow-sm dark:bg-slate-800/80 group">
+              <div>
+                <div className="size-10 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center text-violet-500 mb-4">
+                  <Target className="size-5" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Ticket Médio</p>
+                <h4 className="text-2xl font-black">R$ {ticketMedio.toFixed(2)}</h4>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold mt-4 uppercase">Por serviço finalizado</p>
+            </Card>
+
+            <Card className="p-6 flex flex-col justify-between border-none shadow-sm dark:bg-slate-800/80">
+              <div>
+                <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-4">
+                  <CheckCircle2 className="size-5" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Taxa de Conclusão</p>
+                <h4 className="text-2xl font-black">
+                  {totalServices > 0 ? Math.round((finishedServices / totalServices) * 100) : 0}%
+                </h4>
+              </div>
+              <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full mt-4 overflow-hidden">
+                <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${totalServices > 0 ? (finishedServices / totalServices) * 100 : 0}%` }} />
+              </div>
+            </Card>
+
+            <Card className="p-6 flex flex-col justify-between border-none shadow-sm dark:bg-slate-800/80">
+              <div>
+                <div className="size-10 rounded-xl bg-sky-50 dark:bg-sky-500/10 flex items-center justify-center text-sky-500 mb-4">
+                  <Package className="size-5" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">Volume de Serviços</p>
+                <div className="flex items-baseline gap-2">
+                  <h4 className="text-2xl font-black">{totalServices}</h4>
+                  <span className="text-sm text-slate-400 font-bold">OSs criadas</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold mt-4 uppercase">{finishedServices} concluídos con sucesso</p>
+            </Card>
+          </div>
+
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Revenue Area Chart */}
+            <Card className="p-6 lg:col-span-2 border-none shadow-sm dark:bg-slate-800/80">
+              <div className="mb-6">
+                <h4 className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Evolução de Receita</h4>
+                <p className="text-xs text-slate-400 font-medium">Faturamento de OSs finalizadas no período</p>
+              </div>
+              
+              <div className="h-[300px] w-full">
+                {revenueOverTime.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={revenueOverTime} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0f68e6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#0f68e6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
+                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 700 }} tickFormatter={(val) => `R$${val}`} />
+                      <RechartsTooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="value" stroke="#0f68e6" strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                    <BarChart3 className="size-10 mb-2 opacity-20" />
+                    <p className="text-sm font-bold">Sem dados suficientes p/ geração de gráfico</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Distribution Pie Chart & Data */}
+            <Card className="p-6 border-none shadow-sm dark:bg-slate-800/80 flex flex-col">
+              <div className="mb-4 shrink-0">
+                <h4 className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">Funil Organizacional</h4>
+                <p className="text-xs text-slate-400 font-medium">Status no período</p>
+              </div>
+              
+              <div className="h-[200px] w-full flex items-center justify-center shrink-0">
+                {statusDistribution.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={statusDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {statusDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip 
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontWeight: 'bold' }}
+                        itemStyle={{ color: '#0f68e6' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-xs text-slate-400 font-bold">Nenhum dado</p>
+                )}
+              </div>
+
+              <div className="flex-1 mt-4 space-y-3 overflow-y-auto no-scrollbar">
+                {statusDistribution.sort((a,b) => b.value - a.value).map((stat, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="size-3 rounded-full" style={{ backgroundColor: stat.color }} />
+                      <span className="font-bold text-slate-600 dark:text-slate-300">{stat.name}</span>
+                    </div>
+                    <span className="font-black">{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* Detailed Orders Table */}
+          <div className="pt-4">
+            <h4 className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 mb-6">Detalhamento Operacional ({filteredOrders.length})</h4>
+            
+            {filteredOrders.length === 0 ? (
+              <div className="p-12 text-center bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                <Filter className="size-10 text-slate-300 mx-auto mb-3" />
+                <p className="font-bold text-lg">Nenhum registro encontrado</p>
+                <p className="text-slate-500 text-sm">Tente alterar os filtros de status ou o período avaliado.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredOrders.map(o => (
+                  <div key={o.id} className="flex flex-col p-5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-primary/30 transition-all group">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={cn("size-10 rounded-xl flex items-center justify-center shadow-inner", 
+                          o.status === 'in_progress' ? 'bg-primary/10 text-primary' : 
+                          o.status === 'finished' ? 'bg-emerald-100 text-emerald-600' : 
+                          'bg-amber-100 text-amber-600'
+                        )}>
+                          {o.status === 'finished' ? <CheckCircle2 className="size-5" /> : 
+                           o.status === 'in_progress' ? <Clock className="size-5" /> : 
+                           <Package className="size-5" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm line-clamp-1">{o.customerName}</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">OS #{o.id.split('-').pop()?.substring(0,6)}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-primary">R$ {o.value.toFixed(2)}</p>
+                        <p className="text-[10px] font-bold text-slate-400">{format(parseISO(o.createdAt), 'dd MMM yy', { locale: ptBR })}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
+                      <p className="text-xs font-medium text-slate-500 line-clamp-1 max-w-[60%]">{o.device}</p>
+                      <span className={cn(
+                        "text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md",
+                        o.status === 'finished' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" :
+                        o.status === 'in_progress' ? "bg-primary/10 text-primary dark:bg-primary/20" :
+                        "bg-amber-50 text-amber-600 dark:bg-amber-900/20"
+                      )}>
+                        {STATUS_LABELS[o.status]}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
         </div>
       </motion.div>
     </div>
