@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LayoutDashboard, Package, ClipboardList, Calculator, Settings,
-  ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User, AlertCircle
+  ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User, AlertCircle, X
 } from 'lucide-react';
 import { App as CapApp } from '@capacitor/app';
 import { PushNotifications } from '@capacitor/push-notifications';
@@ -160,15 +160,17 @@ export default function App() {
         message: notification.body || '',
         type: 'info',
         timestamp: new Date(),
+        orderId: notification.data?.orderId
       };
       setNotifications(prev => [notif, ...prev]);
       // Show in-app toast as well
       const toastId = Math.random().toString(36).substring(7);
       setActiveToasts(prev => [...prev, {
         id: toastId,
-        title: notif.title,
-        message: notif.message,
-        type: notif.type,
+        title: notification.title || 'Bytex', // Use notification.title
+        message: notification.body || '',
+        type: 'info',
+        orderId: notification.data?.orderId,
         onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
       }]);
     });
@@ -183,11 +185,12 @@ export default function App() {
       }
 
       const notif: Notification = {
-        id: notification.id || Date.now().toString(),
+        id: notification.id || Date.now().toString(), // Use notification.id
         title: notification.title || 'Bytex',
         message: notification.body || '',
         type: 'info',
         timestamp: new Date(),
+        orderId: notification.data?.orderId
       };
       setNotifications(prev => [notif, ...prev]);
     });
@@ -617,6 +620,9 @@ export default function App() {
             notifications={notifications}
             onClose={() => setShowNotificationsModal(false)}
             onClear={() => setNotifications([])}
+            onNotificationClick={(orderId) => {
+               if (orderId) navigateTo('orders', { orderId });
+            }}
           />
         )}
       </AnimatePresence>
@@ -626,7 +632,30 @@ export default function App() {
         <AnimatePresence>
           {activeToasts.map(toast => (
             <div key={toast.id} className="pointer-events-auto">
-              <Toast {...toast} />
+              <motion.div
+                initial={{ opacity: 0, y: -50, scale: 0.3 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+                className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-4 rounded-xl shadow-lg min-w-[280px] max-w-[360px] flex items-start gap-3 relative overflow-hidden"
+              >
+                <div className="flex items-center gap-3 w-full">
+                  <div
+                    className={cn("flex-1 mb-1 cursor-pointer", toast.orderId ? "hover:underline decoration-white/50" : "")}
+                    onClick={() => {
+                       if (toast.orderId) {
+                         navigateTo('orders', { orderId: toast.orderId });
+                         toast.onClose(toast.id);
+                       }
+                    }}
+                  >
+                    <h4 className="font-bold text-white text-sm">{toast.title}</h4>
+                    <p className="text-white/80 text-xs line-clamp-2 leading-relaxed">{toast.message}</p>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); toast.onClose(toast.id); }} className="text-white/50 hover:text-white transition-colors shrink-0">
+                    <X className="size-4" />
+                  </button>
+                </div>
+              </motion.div>
             </div>
           ))}
         </AnimatePresence>

@@ -38,6 +38,7 @@ export interface Notification {
   type: 'info' | 'success' | 'warning';
   timestamp: Date;
   targetEmployeeId?: string;
+  orderId?: string;
 }
 
 export interface InventoryItem {

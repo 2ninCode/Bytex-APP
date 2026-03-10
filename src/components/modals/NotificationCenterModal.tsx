@@ -9,9 +9,10 @@ interface NotificationCenterModalProps {
   notifications: Notification[];
   onClose: () => void;
   onClear: () => void;
+  onNotificationClick: (orderId?: string) => void;
 }
 
-export const NotificationCenterModal = ({ notifications, onClose, onClear }: NotificationCenterModalProps) => {
+export const NotificationCenterModal = ({ notifications, onClose, onClear, onNotificationClick }: NotificationCenterModalProps) => {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
@@ -60,7 +61,16 @@ export const NotificationCenterModal = ({ notifications, onClose, onClear }: Not
             notifications.map((notif) => (
               <div 
                 key={notif.id}
-                className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex gap-4 animate-in fade-in slide-in-from-right-4 duration-300"
+                onClick={() => {
+                  if (notif.orderId) {
+                    onNotificationClick(notif.orderId);
+                    onClose();
+                  }
+                }}
+                className={cn("p-4 rounded-2xl border flex gap-4 animate-in fade-in slide-in-from-right-4 duration-300 transition-all",
+                  notif.orderId ? "cursor-pointer hover:scale-[1.02] hover:shadow-lg active:scale-95 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700" : 
+                  "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800"
+                )}
               >
                 <div className={cn(
                   "size-10 rounded-xl flex items-center justify-center shrink-0",
