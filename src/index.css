@@ -10,8 +10,12 @@
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  body {
+  html, body, #root {
     @apply bg-[#f6f7f8] dark:bg-background-dark text-slate-900 dark:text-slate-100 font-sans;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
