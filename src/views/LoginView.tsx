@@ -76,7 +76,7 @@ export const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               className="w-24 h-24 mb-6 drop-shadow-2xl"
             >
-              <BytexIcon className="w-full h-full" />
+              <img src="/pwa-192x192.png" alt="Bytex Logo" className="w-full h-full object-contain" />
             </motion.div>
             <h2 className="text-white text-3xl font-black tracking-tight leading-none">Bytex</h2>
             <p className="text-slate-500 text-xs mt-2 font-black uppercase tracking-[0.2em]">Sistemas Inteligentes</p>

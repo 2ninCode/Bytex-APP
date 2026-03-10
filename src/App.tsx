@@ -393,8 +393,8 @@ export default function App() {
           onClick={() => { setCurrentView('dashboard'); setSelectedOrderId(null); }}
           className="flex items-center gap-4 hover:opacity-80 transition-opacity active:scale-95"
         >
-          <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center p-1.5 shadow-inner">
-            <BytexIcon className="size-full" />
+          <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center p-1 shadow-inner overflow-hidden">
+            <img src="/pwa-192x192.png" alt="Bytex Logo" className="size-full object-contain" />
           </div>
           <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
         </button>
@@ -425,9 +425,9 @@ export default function App() {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="w-full h-full"
           >

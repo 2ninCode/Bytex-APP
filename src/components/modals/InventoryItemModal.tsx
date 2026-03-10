@@ -36,8 +36,9 @@ export const InventoryItemModal = ({
   const isEdit = !!item?.id;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+        onClick={e => e.stopPropagation()}
         className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <h3 className="text-xl font-bold">{isEdit ? 'Editar Item' : 'Novo Item'}</h3>

@@ -32,7 +32,7 @@ export const SplashScreen = () => {
           }}
           className="size-32 relative z-10 p-2"
         >
-          <BytexIcon className="size-full drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]" />
+          <img src="/pwa-192x192.png" alt="Bytex Logo" className="size-full object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.5)]" />
         </motion.div>
       </div>
 

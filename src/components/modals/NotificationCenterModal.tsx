@@ -13,11 +13,12 @@ interface NotificationCenterModalProps {
 
 export const NotificationCenterModal = ({ notifications, onClose, onClear }: NotificationCenterModalProps) => {
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-end md:p-4">
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-end md:p-4" onClick={onClose}>
       <motion.div 
         initial={{ x: '100%' }} 
         animate={{ x: 0 }} 
         exit={{ x: '100%' }}
+        onClick={e => e.stopPropagation()}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className="bg-white dark:bg-slate-900 w-full max-w-md h-full md:rounded-3xl shadow-2xl overflow-hidden flex flex-col"
       >
