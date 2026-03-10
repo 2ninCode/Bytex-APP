@@ -16,6 +16,13 @@
     width: 100%;
     position: relative;
     -webkit-overflow-scrolling: touch;
+    /* GPU Acceleration */
+    backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main {
+    will-change: transform;
   }
 }
 

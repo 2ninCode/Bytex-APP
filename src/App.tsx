@@ -388,7 +388,7 @@ export default function App() {
           onCancel={() => setShowOrderModal(false)}
         />
       )}      {/* Header */}
-      <header className="h-20 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50">
+      <header className="h-20 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/50">
         <button 
           onClick={() => { setCurrentView('dashboard'); setSelectedOrderId(null); }}
           className="flex items-center gap-4 hover:opacity-80 transition-opacity active:scale-95"
@@ -428,7 +428,7 @@ export default function App() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="w-full h-full"
           >
             {currentView === 'dashboard' && (
@@ -490,7 +490,7 @@ export default function App() {
       </main>
 
       {/* Navigation */}
-      <nav className="h-20 bg-white/90 dark:bg-slate-950/90 backdrop-blur-2xl border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-around px-4 pb-safe sticky bottom-0 z-30 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+      <nav className="h-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-around px-4 pb-safe sticky bottom-0 z-30 shadow-lg">
         {menuItems.map((item) => {
           const isActive = currentView === item.id;
           return (
