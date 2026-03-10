@@ -54,28 +54,51 @@ export const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background-dark sm:p-10">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-[480px] bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-slate-800/50 overflow-hidden relative"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
         
         <div className="p-10 sm:p-12 relative z-10">
-          <div className="flex flex-col items-center mb-12">
-            <div className="w-24 h-24 mb-6 drop-shadow-2xl">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex flex-col items-center mb-12"
+          >
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.05, 1],
+                filter: ["drop-shadow(0 0 0px rgba(59,130,246,0))", "drop-shadow(0 0 20px rgba(59,130,246,0.3))", "drop-shadow(0 0 0px rgba(59,130,246,0))"]
+              }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              className="w-24 h-24 mb-6 drop-shadow-2xl"
+            >
               <BytexIcon className="w-full h-full" />
-            </div>
+            </motion.div>
             <h2 className="text-white text-3xl font-black tracking-tight leading-none">Bytex</h2>
             <p className="text-slate-500 text-xs mt-2 font-black uppercase tracking-[0.2em]">Sistemas Inteligentes</p>
-          </div>
+          </motion.div>
 
           <div className="space-y-8">
-            <div className="space-y-2">
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="space-y-2"
+            >
               <h1 className="text-white text-2xl font-black tracking-tight">Acesso Restrito</h1>
               <p className="text-slate-500 text-sm font-medium">Insira suas credenciais técnicas</p>
-            </div>
+            </motion.div>
 
-            <div className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="space-y-6"
+            >
               {/* ID */}
               <div className="space-y-2.5">
                 <label className="text-slate-400 text-[10px] font-black uppercase tracking-widest px-1">ID de Técnico</label>
@@ -119,15 +142,22 @@ export const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }
                 </div>
                 <span className="text-slate-400 text-sm font-bold group-hover:text-slate-300 transition-colors">Manter sessão ativa</span>
               </label>
-            </div>
+            </motion.div>
 
-            <Button onClick={handleSubmit} disabled={loading} className="w-full py-5 rounded-[1.5rem] shadow-xl shadow-primary/20 disabled:opacity-60 text-xs font-black uppercase tracking-widest h-auto">
-              {loading ? (
-                <span className="flex items-center gap-3"><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="block w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> Autenticando...</span>
-              ) : (
-                <span className="flex items-center gap-3 justify-center">Entrar no Sistema <LogOut className="w-5 h-5 rotate-180" /></span>
-              )}
-            </Button>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9 }}
+              className="w-full"
+            >
+              <Button onClick={handleSubmit} disabled={loading} className="w-full py-5 rounded-[1.5rem] shadow-xl shadow-primary/20 disabled:opacity-60 text-xs font-black uppercase tracking-widest h-auto">
+                {loading ? (
+                  <span className="flex items-center gap-3"><motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="block w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> Autenticando...</span>
+                ) : (
+                  <span className="flex items-center gap-3 justify-center">Entrar no Sistema <LogOut className="w-5 h-5 rotate-180" /></span>
+                )}
+              </Button>
+            </motion.div>
           </div>
         </div>
         <div className="h-1.5 w-full bg-slate-800"><motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1.5 }} className="h-full bg-primary" /></div>

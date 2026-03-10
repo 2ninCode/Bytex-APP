@@ -22,12 +22,14 @@ import { StatusTrackerView } from './views/StatusTrackerView';
 // Modals
 import { OrderFormModal } from './components/modals/OrderFormModal';
 import { NotificationCenterModal } from './components/modals/NotificationCenterModal';
+import { SplashScreen } from './components/ui/SplashScreen';
 import { Toast, ToastProps } from './components/ui/Toast';
 
 // Types
 import { View, Employee, Order, OrderStatus, InventoryItem, ServicePrice, Notification } from './types';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [currentView, setCurrentView] = useState<View>('login');
   const [currentUser, setCurrentUser] = useState<Employee | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -88,6 +90,13 @@ export default function App() {
         localStorage.removeItem('bytex_remember'); 
       }
     }
+    
+    // 3. Handle splash timeout
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2800);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Data Fetching
@@ -304,6 +313,10 @@ export default function App() {
 
   return (
     <div className="h-[100dvh] bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 flex flex-col overflow-hidden w-full relative">
+      <AnimatePresence>
+        {showSplash && <SplashScreen />}
+      </AnimatePresence>
+      
       {/* Modals */}
       {showOrderModal !== false && (
         <OrderFormModal 
