@@ -44,7 +44,7 @@ export const CalculatorView = ({ onAddOrder, prices }: {
         </div>
         <div className="space-y-2">
           <h3 className="text-xl font-black">Configuração Pendente</h3>
-          <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">Configure sua tabela de preços nos ajustes para começar a orçar.</p>
+          <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium">Configure sua tabela de preços nos ajustes para começar a calcular.</p>
         </div>
       </div>
     );
@@ -54,7 +54,7 @@ export const CalculatorView = ({ onAddOrder, prices }: {
     <div className="p-6 space-y-10 pb-44">
       <div className="pt-2">
         <h2 className="text-2xl font-black tracking-tight">Calculadora</h2>
-        <p className="text-slate-500 text-sm mt-1 font-medium">Selecione os serviços para o orçamento</p>
+        <p className="text-slate-500 text-sm mt-1 font-medium">Selecione os serviços para o cálculo</p>
       </div>
 
       <div className="space-y-12">
