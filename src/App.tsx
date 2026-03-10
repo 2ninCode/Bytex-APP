@@ -337,15 +337,6 @@ export default function App() {
         </button>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }} 
-            className={cn(
-              "size-12 flex items-center justify-center rounded-2xl transition-all relative group",
-              currentView === 'settings' ? "text-primary bg-primary/10" : "text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800"
-            )}
-          >
-            <Settings className="size-6 transition-transform group-hover:rotate-45" />
-          </button>
-          <button 
             onClick={() => setShowNotificationsModal(true)} 
             className="size-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
           >
@@ -353,6 +344,15 @@ export default function App() {
             {notifications.length > 0 && (
               <span className="absolute top-3 right-3 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
             )}
+          </button>
+          <button 
+            onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }} 
+            className={cn(
+              "size-12 flex items-center justify-center rounded-2xl transition-all relative group",
+              currentView === 'settings' ? "text-primary bg-primary/10" : "text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800"
+            )}
+          >
+            <Settings className="size-6 transition-transform group-hover:rotate-45" />
           </button>
         </div>
       </header>
