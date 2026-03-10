@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  LayoutDashboard, Package, ClipboardList, Calculator, Settings, 
+import {
+  LayoutDashboard, Package, ClipboardList, Calculator, Settings,
   ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User, AlertCircle
 } from 'lucide-react';
 import { App as CapApp } from '@capacitor/app';
@@ -41,23 +41,23 @@ export default function App() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [activeToasts, setActiveToasts] = useState<ToastProps[]>([]);
-  
+
   const [showOrderModal, setShowOrderModal] = useState<boolean | Order>(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  
+
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('bytex_theme');
-    return saved ? saved === 'dark' : true; 
+    return saved ? saved === 'dark' : true;
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
   const soundEnabledRef = useRef(soundEnabled);
-  
+
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
   }, [soundEnabled]);
-  
-  const [lowStockThreshold, setLowStockThreshold] = useState(5); 
-  const lastBackButtonPress = useRef<number>(0);  
+
+  const [lowStockThreshold, setLowStockThreshold] = useState(5);
+  const lastBackButtonPress = useRef<number>(0);
   // Theme management
   useEffect(() => {
     if (darkMode) {
@@ -68,12 +68,12 @@ export default function App() {
       localStorage.setItem('bytex_theme', 'light');
     }
   }, [darkMode]);
-  
+
   // Consolidated Mount Logic: Routing & Auth
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const trackId = params.get('track');
-    
+
     // 1. Check for tracking link first
     if (trackId) {
       setCurrentView('status_tracker');
@@ -90,11 +90,11 @@ export default function App() {
         setCurrentView('dashboard');
         // Request push notification permissions (FCM) after auto-login
         setupPushNotifications();
-      } catch (e) { 
-        localStorage.removeItem('bytex_remember'); 
+      } catch (e) {
+        localStorage.removeItem('bytex_remember');
       }
     }
-    
+
     // 3. Handle splash timeout
     const timer = setTimeout(() => {
       setShowSplash(false);
@@ -138,9 +138,9 @@ export default function App() {
           if (emp && emp.id) {
             savePushToken(token.value, emp.id);
           }
-        } catch (e) {}
+        } catch (e) { }
       } else if (currentUser) {
-         savePushToken(token.value, currentUser.id);
+        savePushToken(token.value, currentUser.id);
       }
     });
 
@@ -242,18 +242,27 @@ export default function App() {
 
   // History management for back button
   useEffect(() => {
-    if (currentUser && currentView !== 'login') {
-      window.history.pushState({ view: currentView }, '', '');
-    }
-  }, [currentView, currentUser]);
-
-  useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      if (event.state && event.state.view) {
-        setCurrentView(event.state.view);
+      // We always trap the user by pushing a state forward again so they don't leave the SPA
+      window.history.pushState(null, '', window.location.href);
+
+      // Handle the back action logically based on the current view
+      if (showNotificationsModal) {
+        setShowNotificationsModal(false);
+      } else if (showOrderModal) {
+        setShowOrderModal(false);
+      } else if (currentView === 'status_tracker') {
+        setCurrentView(currentUser ? 'dashboard' : 'login');
+      } else if (currentView === 'orders' && selectedOrderId) {
+        setSelectedOrderId(null);
+      } else if (currentView !== 'dashboard' && currentView !== 'login' && currentUser) {
+        setCurrentView('dashboard');
+        setSelectedOrderId(null);
       }
     };
 
+    // Push initial trap state
+    window.history.pushState(null, '', window.location.href);
     window.addEventListener('popstate', handlePopState);
 
     // Capacitor Hardware Back Button
@@ -301,7 +310,7 @@ export default function App() {
             type: 'info',
             onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
           }]);
-          
+
           // Auto close the "Double Tap" hint after 2s
           setTimeout(() => {
             setActiveToasts(current => current.filter(t => t.id !== toastId));
@@ -327,7 +336,7 @@ export default function App() {
     setCurrentUser(emp);
     setCurrentView('dashboard');
     // Re-register to bind the token to the newly logged-in user
-    PushNotifications.register().catch(() => {});
+    PushNotifications.register().catch(() => { });
   };
 
   const handleLogout = () => {
@@ -367,7 +376,7 @@ export default function App() {
   };
 
   const handleDeleteOrder = async (id: string) => {
-    if (!supabase || !window.confirm('Excluir esta ordem permanentemente?')) return;
+    if (!supabase) return;
     await supabase.from('orders').delete().eq('id', id);
     setSelectedOrderId(null);
     refreshOrders();
@@ -392,7 +401,7 @@ export default function App() {
   };
 
   // No-op sendNotification kept for prop compatibility (actual send goes through Edge Function)
-  const sendNotification = (_n: Notification) => {};
+  const sendNotification = (_n: Notification) => { };
 
   // Rendering logic
   if (currentView === 'status_tracker') {
@@ -418,17 +427,17 @@ export default function App() {
       <AnimatePresence>
         {showSplash && <SplashScreen />}
       </AnimatePresence>
-      
+
       {/* Modals */}
       {showOrderModal !== false && (
-        <OrderFormModal 
+        <OrderFormModal
           order={showOrderModal === true ? undefined : showOrderModal}
           onSave={handleSaveOrder}
           onCancel={() => setShowOrderModal(false)}
         />
       )}      {/* Header */}
       <header className="h-20 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/50">
-        <button 
+        <button
           onClick={() => { setCurrentView('dashboard'); setSelectedOrderId(null); }}
           className="flex items-center gap-4 hover:opacity-80 transition-opacity active:scale-95"
         >
@@ -438,8 +447,8 @@ export default function App() {
           <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
         </button>
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => setShowNotificationsModal(true)} 
+          <button
+            onClick={() => setShowNotificationsModal(true)}
             className="size-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
           >
             <Bell className="size-6 transition-transform group-hover:rotate-12" />
@@ -447,8 +456,8 @@ export default function App() {
               <span className="absolute top-3 right-3 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
             )}
           </button>
-          <button 
-            onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }} 
+          <button
+            onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }}
             className={cn(
               "size-12 flex items-center justify-center rounded-2xl transition-all relative group",
               currentView === 'settings' ? "text-primary bg-primary/10" : "text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800"
@@ -471,25 +480,25 @@ export default function App() {
             className="w-full h-full"
           >
             {currentView === 'dashboard' && (
-              <DashboardView 
-                orders={orders} 
-                inventoryItems={inventoryItems} 
-                lowStockThreshold={lowStockThreshold} 
-                onNavigate={(v) => setCurrentView(v as View)} 
+              <DashboardView
+                orders={orders}
+                inventoryItems={inventoryItems}
+                lowStockThreshold={lowStockThreshold}
+                onNavigate={(v) => setCurrentView(v as View)}
               />
             )}
             {currentView === 'inventory' && (
-              <InventoryView 
-                currentUser={currentUser} 
-                items={inventoryItems} 
-                setItems={setInventoryItems} 
-                lowStockThreshold={lowStockThreshold} 
+              <InventoryView
+                currentUser={currentUser}
+                items={inventoryItems}
+                setItems={setInventoryItems}
+                lowStockThreshold={lowStockThreshold}
               />
             )}
             {currentView === 'orders' && (
-              <OrdersView 
-                currentUser={currentUser} 
-                orders={orders} 
+              <OrdersView
+                currentUser={currentUser}
+                orders={orders}
                 selectedOrderId={selectedOrderId}
                 onSelect={setSelectedOrderId}
                 onBack={() => setSelectedOrderId(null)}
@@ -500,13 +509,13 @@ export default function App() {
               />
             )}
             {currentView === 'calculator' && (
-              <CalculatorView 
-                prices={servicePrices} 
-                onAddOrder={handleCalculatorAddOrder} 
+              <CalculatorView
+                prices={servicePrices}
+                onAddOrder={handleCalculatorAddOrder}
               />
             )}
             {currentView === 'settings' && (
-              <SettingsView 
+              <SettingsView
                 currentUser={currentUser}
                 employees={employees}
                 onRefreshEmployees={refreshEmployees}
@@ -560,7 +569,7 @@ export default function App() {
       {/* Notifications Modal */}
       <AnimatePresence>
         {showNotificationsModal && (
-          <NotificationCenterModal 
+          <NotificationCenterModal
             notifications={notifications}
             onClose={() => setShowNotificationsModal(false)}
             onClear={() => setNotifications([])}
