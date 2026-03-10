@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Package, ClipboardList, Calculator, Settings, 
@@ -21,6 +21,8 @@ import { StatusTrackerView } from './views/StatusTrackerView';
 
 // Modals
 import { OrderFormModal } from './components/modals/OrderFormModal';
+import { NotificationCenterModal } from './components/modals/NotificationCenterModal';
+import { Toast, ToastProps } from './components/ui/Toast';
 
 // Types
 import { View, Employee, Order, OrderStatus, InventoryItem, ServicePrice, Notification } from './types';
@@ -33,6 +35,8 @@ export default function App() {
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [servicePrices, setServicePrices] = useState<ServicePrice[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [activeToasts, setActiveToasts] = useState<ToastProps[]>([]);
   
   const [showOrderModal, setShowOrderModal] = useState<boolean | Order>(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -42,6 +46,11 @@ export default function App() {
     return saved ? saved === 'dark' : true; 
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const soundEnabledRef = useRef(soundEnabled);
+  
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
   
   const [lowStockThreshold, setLowStockThreshold] = useState(5); 
   
@@ -216,8 +225,18 @@ export default function App() {
         if (!notif.targetEmployeeId || notif.targetEmployeeId === currentUser.id) {
           setNotifications(prev => [notif, ...prev]);
           
-          // Play sound if enabled
-          if (soundEnabled) {
+          // Trigger toast
+          const toastId = Math.random().toString(36).substring(7);
+          setActiveToasts(prev => [...prev, {
+            id: toastId,
+            title: notif.title,
+            message: notif.message,
+            type: notif.type,
+            onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
+          }]);
+
+          // Play sound if enabled using ref
+          if (soundEnabledRef.current) {
             const audio = new Audio('/notification.mp3');
             audio.play().catch(e => console.error("Error playing sound:", e));
           }
@@ -225,7 +244,9 @@ export default function App() {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      supabase.removeChannel(channel); 
+    };
   }, [currentUser]);
 
   const sendNotification = (n: Notification) => {
@@ -283,12 +304,12 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => setCurrentView('settings')} 
+            onClick={() => setShowNotificationsModal(true)} 
             className="size-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
           >
             <Bell className="size-6 transition-transform group-hover:rotate-12" />
             {notifications.length > 0 && (
-              <span className="absolute top-3 right-3 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm" />
+              <span className="absolute top-3 right-3 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
             )}
           </button>
         </div>
@@ -391,6 +412,27 @@ export default function App() {
           );
         })}
       </nav>
+      {/* Notifications Modal */}
+      <AnimatePresence>
+        {showNotificationsModal && (
+          <NotificationCenterModal 
+            notifications={notifications}
+            onClose={() => setShowNotificationsModal(false)}
+            onClear={() => setNotifications([])}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Toast Overlay */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[300] flex flex-col gap-3 pointer-events-none">
+        <AnimatePresence>
+          {activeToasts.map(toast => (
+            <div key={toast.id} className="pointer-events-auto">
+              <Toast {...toast} />
+            </div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
