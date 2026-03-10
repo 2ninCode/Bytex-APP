@@ -5,7 +5,7 @@ import {
   ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User, AlertCircle
 } from 'lucide-react';
 import { App as CapApp } from '@capacitor/app';
-import { LocalNotifications } from '@capacitor/local-notifications';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { supabase } from './lib/supabase';
 import { cn } from './components/ui/utils';
 import { BytexIcon } from './components/ui/BytexIcon';
@@ -98,11 +98,34 @@ export default function App() {
       setShowSplash(false);
     }, 2800);
 
-    // 4. Request notification permissions
-    LocalNotifications.requestPermissions();
+    // 4. Request push notification permissions (FCM)
+    setupPushNotifications();
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Setup FCM Push Notifications
+  const setupPushNotifications = async () => {
+    try {
+      const permission = await PushNotifications.requestPermissions();
+      if (permission.receive !== 'granted') {
+        console.warn('Push notification permission not granted');
+        return;
+      }
+      await PushNotifications.register();
+    } catch (e) {
+      console.error('Push setup error (likely running in browser):', e);
+    }
+  };
+
+  // Save FCM token to Supabase when received
+  const savePushToken = async (token: string, employeeId: string) => {
+    if (!supabase) return;
+    await supabase.from('push_tokens').upsert(
+      { employee_id: employeeId, push_token: token, updated_at: new Date().toISOString() },
+      { onConflict: 'employee_id' }
+    );
+  };
 
   // Data Fetching
   const refreshEmployees = async () => {
@@ -239,10 +262,62 @@ export default function App() {
     };
   }, [currentView, currentUser, selectedOrderId, showOrderModal, showNotificationsModal]);
 
+  // Register push token listeners and bind to logged-in user
+  useEffect(() => {
+    // Listener for when a new FCM token is received or refreshed
+    const tokenListener = PushNotifications.addListener('registration', (token) => {
+      if (currentUser) {
+        savePushToken(token.value, currentUser.id);
+      }
+    });
+
+    // Listener for push notification received while app is in foreground
+    const foregroundListener = PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      const notif: Notification = {
+        id: notification.id || Date.now().toString(),
+        title: notification.title || 'Bytex',
+        message: notification.body || '',
+        type: 'info',
+        timestamp: new Date(),
+      };
+      setNotifications(prev => [notif, ...prev]);
+      // Show in-app toast as well
+      const toastId = Math.random().toString(36).substring(7);
+      setActiveToasts(prev => [...prev, {
+        id: toastId,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
+        onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
+      }]);
+    });
+
+    // Listener for when user taps a notification (app was in background/closed)
+    const actionListener = PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      const notification = action.notification;
+      const notif: Notification = {
+        id: notification.id || Date.now().toString(),
+        title: notification.title || 'Bytex',
+        message: notification.body || '',
+        type: 'info',
+        timestamp: new Date(),
+      };
+      setNotifications(prev => [notif, ...prev]);
+    });
+
+    return () => {
+      tokenListener.then(l => l.remove());
+      foregroundListener.then(l => l.remove());
+      actionListener.then(l => l.remove());
+    };
+  }, [currentUser]);
+
   // Handlers
   const handleLogin = (emp: Employee) => {
     setCurrentUser(emp);
     setCurrentView('dashboard');
+    // Re-register to bind the token to the newly logged-in user
+    PushNotifications.register().catch(() => {});
   };
 
   const handleLogout = () => {
@@ -306,73 +381,8 @@ export default function App() {
     refreshPrices();
   };
 
-  // Realtime Notifications
-  useEffect(() => {
-    if (!supabase || !currentUser) return;
-    
-    const channel = supabase.channel('bytex-notifications');
-    
-    channel
-      .on('broadcast', { event: 'new-notification' }, ({ payload }) => {
-        const notif = payload as Notification;
-        // Only show if it matches current user or is for everyone
-        if (!notif.targetEmployeeId || notif.targetEmployeeId === currentUser.id) {
-          setNotifications(prev => [notif, ...prev]);
-          
-          // Trigger toast
-          const toastId = Math.random().toString(36).substring(7);
-          setActiveToasts(prev => [...prev, {
-            id: toastId,
-            title: notif.title,
-            message: notif.message,
-            type: notif.type,
-            onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
-          }]);
-
-          // Play sound if enabled using ref
-          if (soundEnabledRef.current) {
-            const audio = new Audio('/notification.mp3');
-            audio.play().catch(e => console.error("Error playing sound:", e));
-          }
-
-          // Trigger System Notification
-          LocalNotifications.schedule({
-            notifications: [
-              {
-                title: notif.title,
-                body: notif.message,
-                id: Math.floor(Math.random() * 10000),
-                schedule: { at: new Date(Date.now() + 100) },
-                sound: 'notification.mp3', // For Android
-                actionTypeId: '',
-                extra: null
-              }
-            ]
-          }).catch(e => console.error("Error scheduling local notification:", e));
-        }
-      })
-      .subscribe();
-
-    return () => { 
-      supabase.removeChannel(channel); 
-    };
-  }, [currentUser]);
-
-  const sendNotification = (n: Notification) => {
-    if (!supabase) return;
-    
-    const channel = supabase.channel('bytex-notifications');
-    channel.send({
-      type: 'broadcast',
-      event: 'new-notification',
-      payload: n
-    });
-    
-    // Also add locally if sender is a recipient
-    if (!n.targetEmployeeId || n.targetEmployeeId === currentUser?.id) {
-      setNotifications(prev => [n, ...prev]);
-    }
-  };
+  // No-op sendNotification kept for prop compatibility (actual send goes through Edge Function)
+  const sendNotification = (_n: Notification) => {};
 
   // Rendering logic
   if (currentView === 'status_tracker') {
