@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Package, ClipboardList, Calculator, Settings, 
-  ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User
+  ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User, AlertCircle
 } from 'lucide-react';
+import { App as CapApp } from '@capacitor/app';
 import { supabase } from './lib/supabase';
 import { cn } from './components/ui/utils';
 import { BytexIcon } from './components/ui/BytexIcon';
@@ -55,7 +56,7 @@ export default function App() {
   }, [soundEnabled]);
   
   const [lowStockThreshold, setLowStockThreshold] = useState(5); 
-  
+  const lastBackButtonPress = useRef<number>(0);  
   // Theme management
   useEffect(() => {
     if (darkMode) {
@@ -169,8 +170,70 @@ export default function App() {
     };
 
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+
+    // Capacitor Hardware Back Button
+    const setupBackButton = async () => {
+      const listener = await CapApp.addListener('backButton', ({ canGoBack }) => {
+        // 1. Close Modals first
+        if (showNotificationsModal) {
+          setShowNotificationsModal(false);
+          return;
+        }
+        if (showOrderModal) {
+          setShowOrderModal(false);
+          return;
+        }
+
+        // 2. Navigation Logic
+        if (currentView === 'status_tracker') {
+          setCurrentView(currentUser ? 'dashboard' : 'login');
+          return;
+        }
+
+        if (currentView === 'orders' && selectedOrderId) {
+          setSelectedOrderId(null);
+          return;
+        }
+
+        if (currentView !== 'dashboard' && currentUser) {
+          setCurrentView('dashboard');
+          setSelectedOrderId(null);
+          return;
+        }
+
+        // 3. Exit App Logic (Only if on Dashboard or Login)
+        const now = Date.now();
+        if (now - lastBackButtonPress.current < 2000) {
+          CapApp.exitApp();
+        } else {
+          lastBackButtonPress.current = now;
+          // Trigger a temporary toast
+          const toastId = `exit-${now}`;
+          setActiveToasts(prev => [...prev, {
+            id: toastId,
+            title: "Deseja sair?",
+            message: "Pressione novamente para fechar o aplicativo",
+            type: 'info',
+            onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
+          }]);
+          
+          // Auto close the "Double Tap" hint after 2s
+          setTimeout(() => {
+            setActiveToasts(current => current.filter(t => t.id !== toastId));
+          }, 2000);
+        }
+      });
+
+      return listener;
+    };
+
+    const backButtonListener = setupBackButton();
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      backButtonListener.then(l => l.remove());
+    };
+  }, [currentView, currentUser, selectedOrderId, showOrderModal, showNotificationsModal]);
 
   // Handlers
   const handleLogin = (emp: Employee) => {
