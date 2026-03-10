@@ -88,6 +88,8 @@ export default function App() {
         const emp = JSON.parse(saved);
         setCurrentUser(emp);
         setCurrentView('dashboard');
+        // Request push notification permissions (FCM) after auto-login
+        setupPushNotifications();
       } catch (e) { 
         localStorage.removeItem('bytex_remember'); 
       }
@@ -97,9 +99,6 @@ export default function App() {
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 2800);
-
-    // 4. Request push notification permissions (FCM)
-    setupPushNotifications();
 
     return () => clearTimeout(timer);
   }, []);
@@ -126,6 +125,65 @@ export default function App() {
       { onConflict: 'employee_id' }
     );
   };
+
+  // Listeners for token and notifications
+  useEffect(() => {
+    // We bind the token listener. It fires ONCE when PushNotifications.register() is successfully called
+    const tokenListener = PushNotifications.addListener('registration', (token) => {
+      // Use the functional form or save it directly if we trigger it AFTER current user is set
+      const savedUserStr = localStorage.getItem('bytex_remember');
+      if (savedUserStr) {
+        try {
+          const emp = JSON.parse(savedUserStr);
+          if (emp && emp.id) {
+            savePushToken(token.value, emp.id);
+          }
+        } catch (e) {}
+      } else if (currentUser) {
+         savePushToken(token.value, currentUser.id);
+      }
+    });
+
+    // Listener for push notification received while app is in foreground
+    const foregroundListener = PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      const notif: Notification = {
+        id: notification.id || Date.now().toString(),
+        title: notification.title || 'Bytex',
+        message: notification.body || '',
+        type: 'info',
+        timestamp: new Date(),
+      };
+      setNotifications(prev => [notif, ...prev]);
+      // Show in-app toast as well
+      const toastId = Math.random().toString(36).substring(7);
+      setActiveToasts(prev => [...prev, {
+        id: toastId,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type,
+        onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
+      }]);
+    });
+
+    // Listener for when user taps a notification (app was in background/closed)
+    const actionListener = PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      const notification = action.notification;
+      const notif: Notification = {
+        id: notification.id || Date.now().toString(),
+        title: notification.title || 'Bytex',
+        message: notification.body || '',
+        type: 'info',
+        timestamp: new Date(),
+      };
+      setNotifications(prev => [notif, ...prev]);
+    });
+
+    return () => {
+      tokenListener.then(l => l.remove());
+      foregroundListener.then(l => l.remove());
+      actionListener.then(l => l.remove());
+    };
+  }, [currentUser]);
 
   // Data Fetching
   const refreshEmployees = async () => {
@@ -262,55 +320,7 @@ export default function App() {
     };
   }, [currentView, currentUser, selectedOrderId, showOrderModal, showNotificationsModal]);
 
-  // Register push token listeners and bind to logged-in user
-  useEffect(() => {
-    // Listener for when a new FCM token is received or refreshed
-    const tokenListener = PushNotifications.addListener('registration', (token) => {
-      if (currentUser) {
-        savePushToken(token.value, currentUser.id);
-      }
-    });
 
-    // Listener for push notification received while app is in foreground
-    const foregroundListener = PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      const notif: Notification = {
-        id: notification.id || Date.now().toString(),
-        title: notification.title || 'Bytex',
-        message: notification.body || '',
-        type: 'info',
-        timestamp: new Date(),
-      };
-      setNotifications(prev => [notif, ...prev]);
-      // Show in-app toast as well
-      const toastId = Math.random().toString(36).substring(7);
-      setActiveToasts(prev => [...prev, {
-        id: toastId,
-        title: notif.title,
-        message: notif.message,
-        type: notif.type,
-        onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
-      }]);
-    });
-
-    // Listener for when user taps a notification (app was in background/closed)
-    const actionListener = PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      const notification = action.notification;
-      const notif: Notification = {
-        id: notification.id || Date.now().toString(),
-        title: notification.title || 'Bytex',
-        message: notification.body || '',
-        type: 'info',
-        timestamp: new Date(),
-      };
-      setNotifications(prev => [notif, ...prev]);
-    });
-
-    return () => {
-      tokenListener.then(l => l.remove());
-      foregroundListener.then(l => l.remove());
-      actionListener.then(l => l.remove());
-    };
-  }, [currentUser]);
 
   // Handlers
   const handleLogin = (emp: Employee) => {
