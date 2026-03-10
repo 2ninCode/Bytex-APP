@@ -83,21 +83,21 @@ export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose
         onClick={e => e.stopPropagation()}
         className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
-        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20">
+        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 z-20">
           <div>
             <h3 className="text-2xl font-black tracking-tight flex items-center gap-3">
               <BarChart3 className="size-8 text-primary" /> Relatório Estratégico
             </h3>
             <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Inteligência Financeira Bytex</p>
           </div>
-          <button onClick={onClose} className="size-12 hover:bg-white dark:hover:bg-slate-800 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-800">
+          <button onClick={onClose} className="size-12 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl flex items-center justify-center transition-all active:scale-95 shadow-sm border border-slate-100 dark:border-slate-800">
             <X className="size-6 text-slate-400" />
           </button>
         </div>
 
-        <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
-          {/* Period Selector */}
-          <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit">
+        {/* Period Selector - Fixed below header */}
+        <div className="px-8 py-4 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 z-10 flex justify-center shadow-sm">
+          <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl w-fit">
             {(['7d', '30d', '90d'] as const).map(p => (
               <button 
                 key={p} 
@@ -111,7 +111,9 @@ export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose
               </button>
             ))}
           </div>
+        </div>
 
+        <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1 min-h-0">
           {/* Revenue Card */}
           <Card className="p-8 bg-gradient-to-br from-primary to-violet-700 text-white border-none shadow-2xl shadow-primary/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-6 opacity-10">

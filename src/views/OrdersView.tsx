@@ -114,7 +114,7 @@ export const OrdersView = ({
   const nextStatus = getNextStatus(selectedOrder.status);
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 pb-32">
       <div className="flex items-center justify-between mb-2">
         <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium">
           <ArrowLeft className="w-5 h-5" /> Voltar para lista
@@ -245,8 +245,8 @@ export const OrdersView = ({
       </div>
 
       {nextStatus && (
-        <div className="pt-2">
-          <Button onClick={() => onUpdateStatus(selectedOrder.id, nextStatus)} className="w-full py-4 text-lg shadow-lg shadow-primary/20">
+        <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 z-40 shadow-[0_-10px_40px_-5px_rgba(0,0,0,0.05)]">
+          <Button onClick={() => onUpdateStatus(selectedOrder.id, nextStatus)} className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20">
             Avançar Etapa: {
               nextStatus === 'approval' ? 'Aprovar Orçamento' :
                 nextStatus === 'in_progress' ? 'Iniciar Reparo' :

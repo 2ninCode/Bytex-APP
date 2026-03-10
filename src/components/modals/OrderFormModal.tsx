@@ -35,17 +35,16 @@ export const OrderFormModal = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        onClick={e => e.stopPropagation()}
-        className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[2.5rem] md:rounded-2xl shadow-2xl overflow-hidden"
+        className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[2.5rem] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]"
       >
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
           <h3 className="text-xl font-bold">{order?.id ? 'Editar Ordem' : 'Nova Ordem de Serviço'}</h3>
           <button onClick={onCancel} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-500">Nome do Cliente</label>
@@ -123,7 +122,7 @@ export const OrderFormModal = ({
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3">
+        <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3 shrink-0">
           <Button variant="secondary" onClick={onCancel} className="flex-1">Cancelar</Button>
           <Button onClick={() => onSave(formData)} className="flex-1">Salvar Ordem</Button>
         </div>

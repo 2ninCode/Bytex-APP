@@ -58,11 +58,11 @@ export default function App() {
 
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
   // Centralized Navigation helper to prevent dropping out of the PWA
-  const navigateTo = (view: View, params?: { orderId?: string }) => {
+  const navigateTo = (view: View, params?: { orderId?: string | null }) => {
     window.history.pushState(null, '', window.location.href);
     setCurrentView(view);
-    if (params?.orderId) {
-      setSelectedOrderId(params.orderId);
+    if (params !== undefined && 'orderId' in params) {
+      setSelectedOrderId(params.orderId || null);
     }
   };
   const lastBackButtonPress = useRef<number>(0);
@@ -544,7 +544,7 @@ export default function App() {
                 orders={orders}
                 selectedOrderId={selectedOrderId}
                 onSelect={(id) => navigateTo('orders', { orderId: id })}
-                onBack={() => navigateTo('orders', { orderId: undefined })}
+                onBack={() => navigateTo('orders', { orderId: null })}
                 onUpdateStatus={handleUpdateOrderStatus}
                 onAdd={() => setShowOrderModal(true)}
                 onEdit={(o) => setShowOrderModal(o)}
