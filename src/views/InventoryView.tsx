@@ -68,47 +68,57 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
   };
 
   return (
-    <>
+    <div className="flex-1 flex flex-col min-h-0 relative bg-slate-50 dark:bg-slate-900">
       {modalItem !== false && (
         <InventoryItemModal
-          item={modalItem}
+          item={modalItem || {}}
           onSave={handleSave}
           onClose={() => setModalItem(false)}
         />
       )}
-      <div className="p-6 space-y-8 pb-32">
-        <div className="space-y-6">
-          <div className="flex gap-3">
-            <div className="relative group flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-6 h-6 group-focus-within:text-primary transition-colors" />
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="block w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500 font-medium"
-                placeholder="Buscar componentes..."
-              />
-            </div>
-            <button
-              onClick={() => setModalItem(null)}
-              className="shrink-0 h-14 w-14 flex items-center justify-center rounded-2xl bg-primary text-white hover:bg-primary/90 transition-all shadow-lg active:scale-95"
-              title="Novo Item"
-            >
-              <Plus className="w-8 h-8" />
-            </button>
+      
+      {/* Search Header - Pinned */}
+      <div className="p-6 pb-2 space-y-6 shrink-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex gap-3">
+          <div className="relative group flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-6 h-6 group-focus-within:text-primary transition-colors" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="block w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500 font-medium"
+              placeholder="Buscar componentes..."
+            />
           </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {CATEGORIES.map(cat => (
-              <Button key={cat} variant={category === cat ? 'primary' : 'secondary'}
-                className="shrink-0 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider" onClick={() => setCategory(cat)}>
-                {cat}
-              </Button>
-            ))}
-          </div>
+          <button
+            onClick={() => setModalItem(null)}
+            className="shrink-0 h-14 w-14 flex items-center justify-center rounded-2xl bg-primary text-white hover:bg-primary/90 transition-all shadow-lg active:scale-95"
+            title="Novo Item"
+          >
+            <Plus className="w-8 h-8" />
+          </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {CATEGORIES.map(cat => (
+            <button 
+              key={cat} 
+              onClick={() => setCategory(cat)}
+              className={cn(
+                "shrink-0 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
+                category === cat 
+                  ? "bg-primary text-white shadow-md shadow-primary/20" 
+                  : "bg-white dark:bg-slate-800 text-slate-500 border border-slate-100 dark:border-slate-700 hover:bg-slate-50"
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto scroll-smooth">
+        <div className="p-6 space-y-4 pb-32">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">ESTOQUE ATUAL</h2>
             <span className="text-xs font-bold text-slate-400">{filtered.length} {filtered.length !== 1 ? 'ITENS' : 'ITEM'}</span>
@@ -174,7 +184,6 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
         }}
         onCancel={() => setDeleteId(null)}
       />
-
-    </>
+    </div>
   );
 };

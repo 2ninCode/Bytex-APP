@@ -514,8 +514,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto scroll-smooth">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 pb-safe relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}
@@ -523,7 +522,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="w-full h-full"
+            className="flex-1 flex flex-col min-h-0"
           >
             {currentView === 'dashboard' && (
               <DashboardView
@@ -578,6 +577,7 @@ export default function App() {
                 servicePrices={servicePrices}
                 onSavePrice={handleSavePrice}
                 onOpenNotifications={() => setShowNotificationsModal(true)}
+                onDeleteOrder={handleDeleteOrder}
               />
             )}
           </motion.div>

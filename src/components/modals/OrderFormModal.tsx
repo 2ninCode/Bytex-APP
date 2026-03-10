@@ -20,7 +20,7 @@ export const OrderFormModal = ({
     device: order?.device || '',
     serialNumber: order?.serialNumber || '',
     problem: order?.problem || '',
-    value: order?.value || 0,
+    value: order?.value === 0 ? '' : (order?.value || ''),
   });
 
   useEffect(() => {
@@ -35,6 +35,7 @@ export const OrderFormModal = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        onClick={e => e.stopPropagation()}
         className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-t-[2.5rem] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]"
       >
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
@@ -102,10 +103,14 @@ export const OrderFormModal = ({
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-500">Valor (R$)</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={formData.value}
-                  onChange={e => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary"
+                  onChange={e => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setFormData({ ...formData, value: val });
+                  }}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg h-11 px-4 outline-none focus:ring-2 focus:ring-primary font-bold text-primary"
                   placeholder="0.00"
                 />
               </div>
@@ -124,7 +129,7 @@ export const OrderFormModal = ({
 
         <div className="p-6 bg-slate-50 dark:bg-slate-800/50 flex gap-3 shrink-0">
           <Button variant="secondary" onClick={onCancel} className="flex-1">Cancelar</Button>
-          <Button onClick={() => onSave(formData)} className="flex-1">Salvar Ordem</Button>
+          <Button onClick={() => onSave({ ...formData, value: Number(formData.value) || 0 })} className="flex-1">Salvar Ordem</Button>
         </div>
       </motion.div>
     </div>

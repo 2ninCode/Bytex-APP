@@ -34,8 +34,8 @@ export const OrdersView = ({
 
   if (!selectedOrderId || !selectedOrder) {
     return (
-      <div className="p-6 space-y-8 pb-32">
-        <div className="flex items-center justify-between">
+      <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
+        <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10 flex items-center justify-between">
           <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ordens de Serviço</h2>
           {currentUser.role !== 'funcionario' && (
             <Button onClick={onAdd} className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider">
@@ -44,217 +44,232 @@ export const OrdersView = ({
           )}
         </div>
 
-        <div className="space-y-4">
-          {orders.length === 0 ? (
-            <Card className="p-16 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="size-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300">
-                <ClipboardList className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="font-bold text-slate-500">Nenhuma ordem encontrada</p>
-                <p className="text-xs text-slate-400">Comece adicionando uma nova ordem.</p>
-              </div>
-            </Card>
-          ) : (
-            orders.filter(o => o.status !== 'finished').map((order) => (
-              <Card
-                key={order.id}
-                className="p-5 flex items-center gap-5 hover:border-primary/40 transition-all cursor-pointer group active:scale-[0.99]"
-                onClick={() => onSelect(order.id)}
-              >
-                <div className={cn(
-                  "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                  order.status === 'finished' ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary"
-                )}>
-                  <Laptop className="w-7 h-7" />
+        <div className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="p-6 space-y-4 pb-32">
+            {orders.length === 0 ? (
+              <Card className="p-16 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="size-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300">
+                  <ClipboardList className="w-8 h-8" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h3 className="font-bold text-base truncate">{order.customerName}</h3>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-black tracking-widest leading-none">#{order.id}</span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium truncate">{order.device} • {order.problem}</p>
+                <div>
+                  <p className="font-bold text-slate-500">Nenhuma ordem encontrada</p>
+                  <p className="text-xs text-slate-400">Comece adicionando uma nova ordem.</p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="font-extrabold text-sm mb-0.5">R$ {order.value.toFixed(0)}</p>
-                  <span className={cn(
-                    "text-[10px] font-black uppercase tracking-tighter leading-none",
-                    order.status === 'finished' ? "text-emerald-500" :
-                      order.status === 'in_progress' ? "text-primary" : "text-amber-500"
-                  )}>
-                    {order.status === 'budget' ? 'Orçamento' :
-                      order.status === 'approval' ? 'Aprovação' :
-                        order.status === 'in_progress' ? 'Em Reparo' :
-                          order.status === 'ready' ? 'Pronto' : 'Finalizado'}
-                  </span>
-                </div>
-                <ChevronRight className="text-slate-300 group-hover:text-primary transition-colors w-6 h-6" />
               </Card>
-            ))
-          )}
+            ) : (
+              orders.filter(o => o.status !== 'finished').map((order) => (
+                <Card
+                  key={order.id}
+                  className="p-5 flex items-center gap-5 hover:border-primary/40 transition-all cursor-pointer group active:scale-[0.99]"
+                  onClick={() => onSelect(order.id)}
+                >
+                  <div className={cn(
+                    "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
+                    order.status === 'finished' ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary"
+                  )}>
+                    <Laptop className="w-7 h-7" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="font-bold text-base truncate">{order.customerName}</h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-black tracking-widest leading-none">#{order.id}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium truncate">{order.device} • {order.problem}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-extrabold text-sm mb-0.5">R$ {order.value.toFixed(0)}</p>
+                    <span className={cn(
+                      "text-[10px] font-black uppercase tracking-tighter leading-none",
+                      order.status === 'finished' ? "text-emerald-500" :
+                        order.status === 'in_progress' ? "text-primary" : "text-amber-500"
+                    )}>
+                      {order.status === 'budget' ? 'Orçamento' :
+                        order.status === 'approval' ? 'Aprovação' :
+                          order.status === 'in_progress' ? 'Em Reparo' :
+                            order.status === 'ready' ? 'Pronto' : 'Finalizado'}
+                    </span>
+                  </div>
+                  <ChevronRight className="text-slate-300 group-hover:text-primary transition-colors w-6 h-6" />
+                </Card>
+              ))
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
   const steps: { label: string, status: 'done' | 'active' | 'pending' }[] = [
-    { label: "Orçamento", status: selectedOrder.status === 'budget' ? 'active' : 'done' },
-    { label: "Aprovação", status: selectedOrder.status === 'approval' ? 'active' : (['in_progress', 'ready', 'finished'].includes(selectedOrder.status) ? 'done' : 'pending') },
-    { label: "Em Andamento", status: selectedOrder.status === 'in_progress' ? 'active' : (['ready', 'finished'].includes(selectedOrder.status) ? 'done' : 'pending') },
-    { label: "Pronto para Entrega", status: selectedOrder.status === 'ready' ? 'active' : (selectedOrder.status === 'finished' ? 'done' : 'pending') },
-    { label: "Finalizado", status: selectedOrder.status === 'finished' ? 'active' : 'pending' },
+    { label: 'Entrada', status: 'done' },
+    { label: 'Orçamento', status: selectedOrder.status === 'budget' ? 'active' : 'done' },
+    { label: 'Reparo', status: selectedOrder.status === 'in_progress' ? 'active' : (['ready', 'finished'].includes(selectedOrder.status) ? 'done' : 'pending') },
+    { label: 'Finalizado', status: selectedOrder.status === 'finished' ? 'done' : 'pending' }
   ];
 
-  const getNextStatus = (current: OrderStatus): OrderStatus | null => {
-    const sequence: OrderStatus[] = ['budget', 'approval', 'in_progress', 'ready', 'finished'];
-    const idx = sequence.indexOf(current);
-    return idx < sequence.length - 1 ? sequence[idx + 1] : null;
-  };
-
-  const nextStatus = getNextStatus(selectedOrder.status);
+  const statusOptions: { label: string, value: OrderStatus, icon: any, color: string }[] = [
+    { label: 'Orçamento', value: 'budget', icon: ClipboardList, color: 'text-amber-600 bg-amber-50 border-amber-200' },
+    { label: 'Aprovação', value: 'approval', icon: Box, color: 'text-orange-600 bg-orange-50 border-orange-200' },
+    { label: 'Em Reparo', value: 'in_progress', icon: Laptop, color: 'text-primary bg-primary/5 border-primary/20' },
+    { label: 'Pronto', value: 'ready', icon: Check, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+    { label: 'Entregue', value: 'finished', icon: Box, color: 'text-slate-600 bg-slate-50 border-slate-200' },
+  ];
 
   return (
-    <div className="p-4 space-y-4 pb-32">
-      <div className="flex items-center justify-between mb-2">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-medium">
-          <ArrowLeft className="w-5 h-5" /> Voltar para lista
-        </button>
-        <div className="flex gap-2">
-          {currentUser.role !== 'funcionario' && (
-            <>
-              <Button variant="secondary" onClick={() => onEdit(selectedOrder)} className="p-2">
-                <Edit2 className="w-4 h-4" />
-              </Button>
-              <Button variant="danger" onClick={() => setDeleteId(selectedOrder.id)} className="p-2">
-                <X className="w-4 h-4" />
-              </Button>
-            </>
-          )}
+    <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
+      {/* Detail Header - Pinned */}
+      <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={onBack} className="p-3 -ml-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-90">
+            <ArrowLeft className="w-7 h-7" />
+          </button>
+          <div className="flex gap-2">
+            <button onClick={() => onTrack(selectedOrder.id)} className="p-3 bg-primary/5 text-primary hover:bg-primary/10 rounded-2xl transition-all active:scale-95" title="Rastrear">
+              <ArrowUpRight className="w-6 h-6" />
+            </button>
+            {currentUser.role !== 'funcionario' && (
+              <>
+                <button onClick={() => onEdit(selectedOrder)} className="p-3 bg-primary/5 text-primary hover:bg-primary/10 rounded-2xl transition-all active:scale-95" title="Editar">
+                  <Edit2 className="w-6 h-6" />
+                </button>
+                <button onClick={() => setDeleteId(selectedOrder.id)} className="p-3 bg-red-50 text-red-500 hover:bg-red-100 rounded-2xl transition-all active:scale-95" title="Remover">
+                  <Trash2 className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-start gap-5">
+          <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 rotate-3 shadow-inner">
+            <Laptop className="w-10 h-10" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-2xl font-black text-slate-800 dark:text-white truncate">{selectedOrder.customerName}</h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-[10px] font-black tracking-widest bg-primary text-white px-2 py-0.5 rounded uppercase">#{selectedOrder.id}</span>
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">{selectedOrder.device}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <ConfirmModal 
+      <div className="flex-1 overflow-y-auto scroll-smooth">
+        <div className="p-6 space-y-8 pb-32">
+          {/* Timeline */}
+          <section className="space-y-4">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Progresso do Serviço</h4>
+            <Card className="p-8">
+              <div className="flex items-center justify-between relative">
+                <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 dark:bg-slate-800 -translate-y-1/2 z-0" />
+                {steps.map((step, i) => (
+                  <div key={i} className="relative z-10 flex flex-col items-center gap-3">
+                    <div className={cn(
+                      "size-10 rounded-full border-4 flex items-center justify-center transition-all duration-500",
+                      step.status === 'done' ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/30" :
+                      step.status === 'active' ? "bg-white border-primary text-primary animate-pulse shadow-md" :
+                      "bg-white border-slate-100 text-slate-300 dark:bg-slate-900 dark:border-slate-800"
+                    )}>
+                      {step.status === 'done' ? <Check className="w-5 h-5" /> : <span className="text-xs font-black">{i + 1}</span>}
+                    </div>
+                    <span className={cn("text-[10px] font-black uppercase tracking-wider",
+                      step.status === 'pending' ? "text-slate-300" : "text-slate-600 dark:text-slate-400"
+                    )}>{step.label}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </section>
+
+          {/* Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section className="space-y-4">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Informações Básicas</h4>
+              <Card className="divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+                <div className="p-5 flex items-center gap-4">
+                  <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cliente</p>
+                    <p className="font-bold">{selectedOrder.customerName}</p>
+                  </div>
+                </div>
+                <div className="p-5 flex items-center gap-4">
+                  <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                    <Smartphone className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Aparelho</p>
+                    <p className="font-bold">{selectedOrder.device}</p>
+                  </div>
+                </div>
+                <div className="p-5 flex items-center gap-4">
+                  <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Valor Estimado</p>
+                    <p className="font-bold text-lg text-primary">R$ {selectedOrder.value.toFixed(0)}</p>
+                  </div>
+                </div>
+              </Card>
+            </section>
+
+            <section className="space-y-4">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Defeito Relatado</h4>
+              <Card className="p-6 bg-amber-50/30 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/40">
+                <div className="flex items-start gap-4">
+                  <AlertCircle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
+                  <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300">
+                    {selectedOrder.problem}
+                  </p>
+                </div>
+              </Card>
+            </section>
+          </div>
+
+          <section className="space-y-4">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Ações de Status</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {statusOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => onUpdateStatus(selectedOrder.id, opt.value)}
+                  className={cn(
+                    "p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all active:scale-95 group relative",
+                    selectedOrder.status === opt.value
+                      ? "bg-primary border-primary text-white shadow-xl shadow-primary/20 scale-105 z-10"
+                      : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:border-primary/30"
+                  )}
+                >
+                  <opt.icon className={cn("size-6 transition-transform group-hover:rotate-6",
+                    selectedOrder.status === opt.value ? "text-white" : "text-slate-400"
+                  )} />
+                  <span className="text-[10px] font-black uppercase tracking-wider">{opt.label}</span>
+                  {selectedOrder.status === opt.value && (
+                    <div className="absolute -top-2 -right-2 size-6 bg-white text-primary rounded-full flex items-center justify-center shadow-lg border-2 border-primary">
+                      <Check className="size-4" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <ConfirmModal
         isOpen={!!deleteId}
         title="Excluir Ordem?"
-        message="Esta ação não pode ser desfeita. A ordem de serviço será removida permanentemente do sistema."
-        confirmLabel="Sim, Excluir"
-        cancelLabel="Manter Ordem"
+        message="Tem certeza que deseja remover esta ordem de serviço? Esta ação é irreversível."
+        confirmLabel="Excluir Agora"
         onConfirm={() => {
           if (deleteId) onDelete(deleteId);
           setDeleteId(null);
+          onBack();
         }}
         onCancel={() => setDeleteId(null)}
       />
-
-      <Card className="p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-primary mb-6">Status do Reparo</h3>
-        <div className="space-y-0">
-          {steps.map((step, i, arr) => {
-            const isFinishedStep = step.label === 'Finalizado';
-            return (
-              <div key={i} className="flex gap-4 relative">
-                <div className="flex flex-col items-center">
-                  <div className={cn(
-                    "z-10 flex h-8 w-8 items-center justify-center rounded-full border-2",
-                    step.status === 'done' ? 'bg-primary border-primary text-white' :
-                      step.status === 'active' && isFinishedStep ? 'bg-emerald-500 border-emerald-500 text-white' :
-                        step.status === 'active' ? 'bg-primary/10 border-primary text-primary' :
-                          'bg-transparent border-slate-300 dark:border-slate-700 text-slate-400'
-                  )}>
-                    {step.status === 'done' ? <Check className="w-5 h-5" /> :
-                      step.status === 'active' && isFinishedStep ? (
-                        <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                          <style>{`
-                         @keyframes draw-check {
-                           0% { stroke-dashoffset: 50; opacity: 0; }
-                           30% { opacity: 1; }
-                           100% { stroke-dashoffset: 0; opacity: 1; }
-                         }
-                         .check-path {
-                           stroke-dasharray: 50;
-                           stroke-dashoffset: 50;
-                           animation: draw-check 0.6s cubic-bezier(0.4,0,0.2,1) 0.1s forwards;
-                         }
-                       `}</style>
-                          <polyline points="4,13 9,18 20,6" className="check-path" />
-                        </svg>
-                      ) :
-                        step.status === 'active' ? (
-                          <RefreshCw className="w-5 h-5 animate-spin" />
-                        ) :
-                          <Box className="w-5 h-5" />}
-                  </div>
-                  {i < arr.length - 1 && (
-                    <div className={cn("w-0.5 h-10", step.status === 'done' ? 'bg-primary' : 'border-l-2 border-dashed border-slate-300 dark:border-slate-700')}></div>
-                  )}
-                </div>
-                <div className="pb-6">
-                  <p className={cn("font-semibold",
-                    step.status === 'active' && isFinishedStep ? 'text-emerald-600 dark:text-emerald-400' :
-                      step.status === 'active' ? 'text-primary' : ''
-                  )}>{step.label}</p>
-                  <p className="text-sm text-slate-500">
-                    {step.status === 'done' ? 'Concluído' :
-                      step.status === 'active' && isFinishedStep ? '✅ Serviço finalizado!' :
-                        step.status === 'active' ? 'Em andamento' : 'Pendente'}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <User className="text-primary w-5 h-5" />
-            <h4 className="font-bold">Cliente</h4>
-          </div>
-          <p className="text-lg font-semibold">{selectedOrder.customerName}</p>
-          <p className="text-sm text-slate-500 mb-2">{selectedOrder.customerEmail}</p>
-          <p className="text-sm text-slate-500">{selectedOrder.customerPhone}</p>
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Laptop className="text-primary w-5 h-5" />
-            <h4 className="font-bold">Dispositivo</h4>
-          </div>
-          <p className="text-lg font-semibold">{selectedOrder.device}</p>
-          <p className="text-sm text-slate-500 mb-2">S/N: {selectedOrder.serialNumber}</p>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-            Problema: {selectedOrder.problem}
-          </span>
-        </Card>
-      </div>
-
-      <div className="pt-2 flex gap-2">
-         <Button variant="ghost" onClick={() => {
-           const url = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
-           navigator.clipboard.writeText(url);
-           alert('Link de rastreio copiado!');
-         }} className="flex-1 border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:text-primary hover:border-primary">
-           <ArrowUpRight className="w-4 h-4 mr-2" /> Copiar Link
-         </Button>
-         <Button variant="secondary" onClick={() => {
-           onTrack(selectedOrder.id);
-         }} className="flex-1">
-           Visualizar Rastreio
-         </Button>
-      </div>
-
-      {nextStatus && (
-        <div className="fixed bottom-20 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 z-40 shadow-[0_-10px_40px_-5px_rgba(0,0,0,0.05)]">
-          <Button onClick={() => onUpdateStatus(selectedOrder.id, nextStatus)} className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-            Avançar Etapa: {
-              nextStatus === 'approval' ? 'Aprovar Orçamento' :
-                nextStatus === 'in_progress' ? 'Iniciar Reparo' :
-                  nextStatus === 'ready' ? 'Concluir Reparo' : 'Finalizar Entrega'
-            }
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

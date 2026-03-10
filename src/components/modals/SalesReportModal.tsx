@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, BarChart3, Calendar, TrendingUp, TrendingDown, Target, Package, DollarSign, Download, Filter, Search, Smartphone, Laptop, CheckCircle2, Clock } from 'lucide-react';
+import { X, BarChart3, Calendar, TrendingUp, TrendingDown, Target, Package, DollarSign, Download, Filter, Search, Smartphone, Laptop, CheckCircle2, Clock, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { cn } from '../ui/utils';
@@ -30,10 +30,15 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   finished: 'Finalizado'
 };
 
-export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose: () => void }) => {
+export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: { 
+  orders: Order[], 
+  onDeleteOrder: (id: string) => Promise<void>,
+  onClose: () => void 
+}) => {
   const [period, setPeriod] = useState<Period>('30d');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -413,16 +418,25 @@ export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose
                       </div>
                     </div>
                     
-                    <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
-                      <p className="text-xs font-medium text-slate-500 line-clamp-1 max-w-[60%]">{o.device}</p>
-                      <span className={cn(
-                        "text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md",
-                        o.status === 'finished' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" :
-                        o.status === 'in_progress' ? "bg-primary/10 text-primary dark:bg-primary/20" :
-                        "bg-amber-50 text-amber-600 dark:bg-amber-900/20"
-                      )}>
-                        {STATUS_LABELS[o.status]}
-                      </span>
+                    <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-slate-500 line-clamp-1">{o.device}</p>
+                        <span className={cn(
+                          "text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md mt-1 inline-block",
+                          o.status === 'finished' ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20" :
+                          o.status === 'in_progress' ? "bg-primary/10 text-primary dark:bg-primary/20" :
+                          "bg-amber-50 text-amber-600 dark:bg-amber-900/20"
+                        )}>
+                          {STATUS_LABELS[o.status]}
+                        </span>
+                      </div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setDeletingId(o.id); }}
+                        className="size-10 rounded-xl bg-red-50 dark:bg-red-950/20 text-red-500 hover:bg-red-100 dark:hover:bg-red-800 transition-colors flex items-center justify-center shrink-0"
+                        title="Remover OS"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -431,6 +445,40 @@ export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose
           </div>
           
         </div>
+
+        {/* Confirmation Modal for Deletion */}
+        <AnimatePresence>
+          {deletingId && (
+            <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 dark:border-slate-800"
+              >
+                <div className="size-20 bg-red-50 dark:bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
+                  <AlertCircle className="size-10" />
+                </div>
+                <h4 className="text-xl font-black mb-2">Excluir Registro?</h4>
+                <p className="text-slate-500 text-sm font-medium mb-8">Esta ação irá remover permanentemente esta ordem de serviço dos relatórios e do banco de dados.</p>
+                <div className="flex flex-col gap-3">
+                  <Button 
+                    onClick={async () => {
+                      await onDeleteOrder(deletingId);
+                      setDeletingId(null);
+                    }} 
+                    className="w-full bg-red-500 hover:bg-red-600 shadow-lg shadow-red-200 dark:shadow-none"
+                  >
+                    Confirmar Exclusão
+                  </Button>
+                  <Button variant="secondary" onClick={() => setDeletingId(null)} className="w-full">
+                    Cancelar
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
