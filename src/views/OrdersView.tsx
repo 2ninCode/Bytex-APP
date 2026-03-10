@@ -15,7 +15,8 @@ export const OrdersView = ({
   onUpdateStatus,
   onAdd,
   onEdit,
-  onDelete
+  onDelete,
+  onTrack
 }: {
   currentUser: Employee,
   orders: Order[],
@@ -25,7 +26,8 @@ export const OrdersView = ({
   onUpdateStatus: (id: string, status: OrderStatus) => void,
   onAdd: () => void,
   onEdit: (order: Order) => void,
-  onDelete: (id: string) => void
+  onDelete: (id: string) => void,
+  onTrack: (id: string) => void
 }) => {
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const selectedOrder = orders.find(o => o.id === selectedOrderId);
@@ -236,8 +238,7 @@ export const OrdersView = ({
            <ArrowUpRight className="w-4 h-4 mr-2" /> Copiar Link
          </Button>
          <Button variant="secondary" onClick={() => {
-           const url = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
-           window.open(url, '_blank');
+           onTrack(selectedOrder.id);
          }} className="flex-1">
            Visualizar Rastreio
          </Button>

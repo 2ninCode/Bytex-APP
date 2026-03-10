@@ -57,6 +57,14 @@ export default function App() {
   }, [soundEnabled]);
 
   const [lowStockThreshold, setLowStockThreshold] = useState(5);
+  // Centralized Navigation helper to prevent dropping out of the PWA
+  const navigateTo = (view: View, params?: { orderId?: string }) => {
+    window.history.pushState(null, '', window.location.href);
+    setCurrentView(view);
+    if (params?.orderId) {
+      setSelectedOrderId(params.orderId);
+    }
+  };
   const lastBackButtonPress = useRef<number>(0);
   // Theme management
   useEffect(() => {
@@ -168,6 +176,12 @@ export default function App() {
     // Listener for when user taps a notification (app was in background/closed)
     const actionListener = PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       const notification = action.notification;
+      const orderId = notification.data?.orderId;
+      
+      if (orderId && currentUser) {
+        navigateTo('orders', { orderId });
+      }
+
       const notif: Notification = {
         id: notification.id || Date.now().toString(),
         title: notification.title || 'Bytex',
@@ -345,6 +359,20 @@ export default function App() {
     setCurrentView('login');
   };
 
+  const sendAutomatedNotification = async (title: string, message: string, type: 'success' | 'info' | 'warning', targetId: string | null = null, orderId: string | null = null) => {
+    if (!supabase) return;
+    try {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ title, message, type, targetEmployeeId: targetId, orderId }),
+      });
+    } catch(e) { console.error('Automated push error:', e); }
+  };
+
   const handleSaveOrder = async (data: Partial<Order>) => {
     if (!supabase) return;
     if (showOrderModal && (showOrderModal as Order).id) {
@@ -355,6 +383,8 @@ export default function App() {
         customer_phone: data.customerPhone, device: data.device,
         serial_number: data.serialNumber, problem: data.problem, value: data.value
       }).eq('id', id);
+      // Trigger automated notification for order update
+      sendAutomatedNotification('Ordem de Serviço Atualizada', `A ordem #${id} foi atualizada.`, 'info', null, id);
     } else {
       // New
       const newId = `OS-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -364,6 +394,8 @@ export default function App() {
         serial_number: data.serialNumber, problem: data.problem, value: data.value,
         status: 'budget'
       });
+      // Trigger automated notification for everyone about a new order!
+      sendAutomatedNotification('Nova Ordem de Serviço', `Equipamento ${data.device} de ${data.customerName}`, 'info', null, newId);
     }
     setShowOrderModal(false);
     refreshOrders();
@@ -373,6 +405,16 @@ export default function App() {
     if (!supabase) return;
     await supabase.from('orders').update({ status }).eq('id', id);
     refreshOrders();
+    
+    // Trigger automated notification for status change
+    const statusMap = {
+      budget: 'Orçamento',
+      approval: 'Aguardando Aprovação',
+      in_progress: 'Em Reparo',
+      ready: 'Pronto para Entrega',
+      finished: 'Finalizado'
+    };
+    sendAutomatedNotification('Status Atualizado', `A ordem #${id} avançou para ${statusMap[status]}!`, 'success', null, id);
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -389,9 +431,10 @@ export default function App() {
       id: newId, customer_name: client.name, device: client.device, problem: client.problem,
       value: val, status: 'budget'
     });
+    // Send push notification when created from calculator
+    sendAutomatedNotification('Nova Ordem via Calculadora', `Equipamento ${client.device} de ${client.name}`, 'info', null, newId);
     refreshOrders();
-    setCurrentView('orders');
-    setSelectedOrderId(newId);
+    navigateTo('orders', { orderId: newId });
   };
 
   const handleSavePrice = async (id: string, price: number) => {
@@ -500,12 +543,13 @@ export default function App() {
                 currentUser={currentUser}
                 orders={orders}
                 selectedOrderId={selectedOrderId}
-                onSelect={setSelectedOrderId}
-                onBack={() => setSelectedOrderId(null)}
+                onSelect={(id) => navigateTo('orders', { orderId: id })}
+                onBack={() => navigateTo('orders', { orderId: undefined })}
                 onUpdateStatus={handleUpdateOrderStatus}
                 onAdd={() => setShowOrderModal(true)}
                 onEdit={(o) => setShowOrderModal(o)}
                 onDelete={handleDeleteOrder}
+                onTrack={(id) => navigateTo('status_tracker', { orderId: id })}
               />
             )}
             {currentView === 'calculator' && (
