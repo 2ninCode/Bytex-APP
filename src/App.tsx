@@ -282,7 +282,6 @@ export default function App() {
     { id: 'inventory', icon: Package, label: 'Estoque' },
     { id: 'orders', icon: ClipboardList, label: 'Ordens' },
     { id: 'calculator', icon: Calculator, label: 'Calculadora' },
-    { id: 'settings', icon: Settings, label: 'Ajustes' },
   ] as const;
 
   return (
@@ -303,6 +302,15 @@ export default function App() {
           <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button 
+            onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }} 
+            className={cn(
+              "size-12 flex items-center justify-center rounded-2xl transition-all relative group",
+              currentView === 'settings' ? "text-primary bg-primary/10" : "text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800"
+            )}
+          >
+            <Settings className="size-6 transition-transform group-hover:rotate-45" />
+          </button>
           <button 
             onClick={() => setShowNotificationsModal(true)} 
             className="size-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
