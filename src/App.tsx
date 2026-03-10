@@ -145,6 +145,24 @@ export default function App() {
     }
   }, [currentUser]);
 
+  // History management for back button
+  useEffect(() => {
+    if (currentUser && currentView !== 'login') {
+      window.history.pushState({ view: currentView }, '', '');
+    }
+  }, [currentView, currentUser]);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.view) {
+        setCurrentView(event.state.view);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Handlers
   const handleLogin = (emp: Employee) => {
     setCurrentUser(emp);
@@ -285,7 +303,7 @@ export default function App() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 flex flex-col overflow-x-hidden w-full relative">
+    <div className="h-[100dvh] bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 flex flex-col overflow-hidden w-full relative">
       {/* Modals */}
       {showOrderModal !== false && (
         <OrderFormModal 
@@ -295,12 +313,15 @@ export default function App() {
         />
       )}      {/* Header */}
       <header className="h-20 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800/50">
-        <div className="flex items-center gap-4">
+        <button 
+          onClick={() => { setCurrentView('dashboard'); setSelectedOrderId(null); }}
+          className="flex items-center gap-4 hover:opacity-80 transition-opacity active:scale-95"
+        >
           <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center p-1.5 shadow-inner">
             <BytexIcon className="size-full" />
           </div>
           <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           <button 
             onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }} 
