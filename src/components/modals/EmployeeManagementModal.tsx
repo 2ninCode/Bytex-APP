@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { X, UserPlus, User, Crown, Shield, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { ConfirmModal } from '../ui/ConfirmModal';
 import { Employee, Role } from '../../types';
 import { supabase } from '../../lib/supabase';
 
@@ -12,6 +13,7 @@ export const EmployeeManagementModal = ({ employees, onClose, onRefresh }: {
 }) => {
   const [editing, setEditing] = useState<Employee | Partial<Employee> | null>(null);
   const [loading, setLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleSave = async () => {
     if (!editing?.name || !editing?.loginId || !editing?.password) {
@@ -52,11 +54,20 @@ export const EmployeeManagementModal = ({ employees, onClose, onRefresh }: {
     setLoading(false);
   };
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
+      <motion.div 
+        initial={{ opacity: 0, y: 100 }} 
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 100 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-t-[2.5rem] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
           <h3 className="text-xl font-bold">Gestão de Funcionários</h3>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
@@ -112,7 +123,7 @@ export const EmployeeManagementModal = ({ employees, onClose, onRefresh }: {
                       <button onClick={() => setEditing(emp)} className="p-2 text-slate-400 hover:text-primary transition-colors">
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(emp.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                      <button onClick={() => setDeleteId(emp.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -123,6 +134,18 @@ export const EmployeeManagementModal = ({ employees, onClose, onRefresh }: {
           )}
         </div>
       </motion.div>
+
+      <ConfirmModal 
+        isOpen={!!deleteId}
+        title="Excluir Funcionário?"
+        message="Tem certeza que deseja remover este membro da equipe? O acesso será revogado permanentemente."
+        confirmLabel="Sim, Excluir"
+        onConfirm={() => {
+          if (deleteId) handleDelete(deleteId);
+          setDeleteId(null);
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 };

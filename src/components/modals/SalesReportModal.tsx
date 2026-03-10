@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { X, BarChart3, Calendar, TrendingUp, TrendingDown, Target, User, ChevronRight, Package, DollarSign } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -57,6 +57,11 @@ export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose
   const growth = prevRevenue === 0 ? 100 : ((currentRevenue - prevRevenue) / prevRevenue) * 100;
   const isPositive = growth >= 0;
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
   const stats = [
     { label: 'Serviços', val: currentOrders.length, sub: 'total no período', icon: Package, color: 'text-primary bg-primary/10' },
     { label: 'Ticket Médio', val: `R$ ${(currentRevenue / (currentOrders.filter(o => o.status === 'finished').length || 1)).toFixed(0)}`, sub: 'por serviço concluído', icon: Target, color: 'text-violet-500 bg-violet-50' },
@@ -69,10 +74,14 @@ export const SalesReportModal = ({ orders, onClose }: { orders: Order[], onClose
   ];
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
+      <motion.div 
+        initial={{ opacity: 0, y: 100 }} 
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 100 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
         <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20">
           <div>

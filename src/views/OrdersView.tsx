@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check, RefreshCw, Box, User, ArrowUpRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { cn } from '../components/ui/utils';
 import { Order, OrderStatus, Employee } from '../types';
 
@@ -26,6 +27,7 @@ export const OrdersView = ({
   onEdit: (order: Order) => void,
   onDelete: (id: string) => void
 }) => {
+  const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const selectedOrder = orders.find(o => o.id === selectedOrderId);
 
   if (!selectedOrderId || !selectedOrder) {
@@ -121,13 +123,26 @@ export const OrdersView = ({
               <Button variant="secondary" onClick={() => onEdit(selectedOrder)} className="p-2">
                 <Edit2 className="w-4 h-4" />
               </Button>
-              <Button variant="danger" onClick={() => onDelete(selectedOrder.id)} className="p-2">
+              <Button variant="danger" onClick={() => setDeleteId(selectedOrder.id)} className="p-2">
                 <X className="w-4 h-4" />
               </Button>
             </>
           )}
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={!!deleteId}
+        title="Excluir Ordem?"
+        message="Esta ação não pode ser desfeita. A ordem de serviço será removida permanentemente do sistema."
+        confirmLabel="Sim, Excluir"
+        cancelLabel="Manter Ordem"
+        onConfirm={() => {
+          if (deleteId) onDelete(deleteId);
+          setDeleteId(null);
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
 
       <Card className="p-6">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-primary mb-6">Status do Reparo</h3>

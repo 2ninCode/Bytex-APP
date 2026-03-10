@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Plus, Cpu, Database, Router, Cable, FlaskConical, Package, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { cn } from '../components/ui/utils';
 import { InventoryItem, Employee } from '../types';
 import { InventoryItemModal } from '../components/modals/InventoryItemModal';
@@ -18,7 +19,8 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
 }) => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Todos os Ativos');
-  const [modalItem, setModalItem] = useState<Partial<InventoryItem> | null | false>(false); 
+  const [modalItem, setModalItem] = useState<Partial<InventoryItem> | null | false>(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null); 
 
   const filtered = items.filter(item => {
     const matchCat = category === 'Todos os Ativos' || item.category === category;
@@ -148,7 +150,7 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
                         className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-all" title="Editar">
                         <Edit2 className="w-5 h-5" />
                       </button>
-                      <button onClick={() => handleDelete(item.id)}
+                      <button onClick={() => setDeleteId(item.id)}
                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all" title="Remover">
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -160,6 +162,18 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
           )}
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={!!deleteId}
+        title="Remover do Estoque?"
+        message="Você deseja remover permanentemente este item do inventário?"
+        confirmLabel="Confirmar Remoção"
+        onConfirm={() => {
+          if (deleteId) handleDelete(deleteId);
+          setDeleteId(null);
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
 
     </>
   );

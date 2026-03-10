@@ -5,6 +5,7 @@ import {
   ChevronRight, LogOut, Smartphone, Laptop, Bell, Search, Plus, User, AlertCircle
 } from 'lucide-react';
 import { App as CapApp } from '@capacitor/app';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { supabase } from './lib/supabase';
 import { cn } from './components/ui/utils';
 import { BytexIcon } from './components/ui/BytexIcon';
@@ -96,6 +97,9 @@ export default function App() {
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 2800);
+
+    // 4. Request notification permissions
+    LocalNotifications.requestPermissions();
 
     return () => clearTimeout(timer);
   }, []);
@@ -330,6 +334,21 @@ export default function App() {
             const audio = new Audio('/notification.mp3');
             audio.play().catch(e => console.error("Error playing sound:", e));
           }
+
+          // Trigger System Notification
+          LocalNotifications.schedule({
+            notifications: [
+              {
+                title: notif.title,
+                body: notif.message,
+                id: Math.floor(Math.random() * 10000),
+                schedule: { at: new Date(Date.now() + 100) },
+                sound: 'notification.mp3', // For Android
+                actionTypeId: '',
+                extra: null
+              }
+            ]
+          }).catch(e => console.error("Error scheduling local notification:", e));
         }
       })
       .subscribe();

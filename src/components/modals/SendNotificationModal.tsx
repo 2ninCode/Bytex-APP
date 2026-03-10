@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Send } from 'lucide-react';
 import { Button } from '../ui/Button';
@@ -29,11 +29,20 @@ export const SendNotificationModal = ({ onClose, onSend, employees }: {
     onClose();
   };
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-center p-4" onClick={onClose}>
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4" onClick={onClose}>
+      <motion.div 
+        initial={{ opacity: 0, y: 100 }} 
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 100 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         onClick={e => e.stopPropagation()}
-        className="bg-white dark:bg-slate-900 w-full max-md rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
+        className="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-[2.5rem] md:rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
         <h3 className="text-xl font-bold flex items-center gap-2">
           <Send className="w-5 h-5 text-primary" /> Enviar Notificação
         </h3>

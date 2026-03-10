@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bell, X, Info, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { Notification } from '../../types';
@@ -12,6 +12,11 @@ interface NotificationCenterModalProps {
 }
 
 export const NotificationCenterModal = ({ notifications, onClose, onClear }: NotificationCenterModalProps) => {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-center justify-end md:p-4" onClick={onClose}>
       <motion.div 
