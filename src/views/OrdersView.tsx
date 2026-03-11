@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check, RefreshCw, Box, User, ArrowUpRight } from 'lucide-react';
+import { Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check, RefreshCw, Box, User, ArrowUpRight, Trash2, Smartphone, DollarSign, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
