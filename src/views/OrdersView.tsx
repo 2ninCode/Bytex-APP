@@ -255,12 +255,12 @@ export const OrdersView = ({
               </Card>
             </section>
 
-            <section className="space-y-3">
+            <section className="space-y-3 mb-6">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Defeito Relatado</h4>
-              <Card className="p-5 bg-amber-50/20 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/40 h-full">
+              <Card className="p-5 bg-amber-50/20 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/40">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300">
+                  <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 break-words whitespace-pre-wrap">
                     {selectedOrder.problem}
                   </p>
                 </div>
