@@ -117,34 +117,34 @@ export const OrdersView = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
       {/* Detail Header - Pinned */}
-      <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={onBack} className="p-3 -ml-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-90">
-            <ArrowLeft className="w-7 h-7" />
+      <div className="p-4 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={onBack} className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-90">
+            <ArrowLeft className="w-6 h-6" />
           </button>
           <div className="flex gap-2">
-            <button onClick={() => onTrack(selectedOrder.id)} className="p-3 bg-primary/5 text-primary hover:bg-primary/10 rounded-2xl transition-all active:scale-95" title="Rastrear">
-              <ArrowUpRight className="w-6 h-6" />
+            <button onClick={() => onTrack(selectedOrder.id)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95" title="Rastrear">
+              <ArrowUpRight className="w-5 h-5" />
             </button>
             {currentUser.role !== 'funcionario' && (
               <>
-                <button onClick={() => onEdit(selectedOrder)} className="p-3 bg-primary/5 text-primary hover:bg-primary/10 rounded-2xl transition-all active:scale-95" title="Editar">
-                  <Edit2 className="w-6 h-6" />
+                <button onClick={() => onEdit(selectedOrder)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95" title="Editar">
+                  <Edit2 className="w-5 h-5" />
                 </button>
-                <button onClick={() => setDeleteId(selectedOrder.id)} className="p-3 bg-red-50 text-red-500 hover:bg-red-100 rounded-2xl transition-all active:scale-95" title="Remover">
-                  <Trash2 className="w-6 h-6" />
+                <button onClick={() => setDeleteId(selectedOrder.id)} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95" title="Remover">
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </>
             )}
           </div>
         </div>
         
-        <div className="flex items-start gap-5">
-          <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0 rotate-3 shadow-inner">
-            <Laptop className="w-10 h-10" />
+        <div className="flex items-start gap-4">
+          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 rotate-3 shadow-inner">
+            <Laptop className="w-6 h-6" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-2xl font-black text-slate-800 dark:text-white truncate">{selectedOrder.customerName}</h3>
+            <h3 className="text-xl font-black text-slate-800 dark:text-white truncate">{selectedOrder.customerName}</h3>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-[10px] font-black tracking-widest bg-primary text-white px-2 py-0.5 rounded uppercase">#{selectedOrder.id}</span>
               <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">{selectedOrder.device}</span>
@@ -154,22 +154,22 @@ export const OrdersView = ({
       </div>
 
       <div className="flex-1 overflow-y-auto scroll-smooth">
-        <div className="p-6 space-y-8 pb-32">
+        <div className="p-4 max-w-4xl mx-auto space-y-6 pb-32">
           {/* Timeline */}
-          <section className="space-y-4">
+          <section className="space-y-3">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Progresso do Serviço</h4>
-            <Card className="p-8">
+            <Card className="p-5">
               <div className="flex items-center justify-between relative">
                 <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 dark:bg-slate-800 -translate-y-1/2 z-0" />
                 {steps.map((step, i) => (
-                  <div key={i} className="relative z-10 flex flex-col items-center gap-3">
+                  <div key={i} className="relative z-10 flex flex-col items-center gap-2">
                     <div className={cn(
-                      "size-10 rounded-full border-4 flex items-center justify-center transition-all duration-500",
+                      "size-8 rounded-full border-2 flex items-center justify-center transition-all duration-500",
                       step.status === 'done' ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/30" :
                       step.status === 'active' ? "bg-white border-primary text-primary animate-pulse shadow-md" :
                       "bg-white border-slate-100 text-slate-300 dark:bg-slate-900 dark:border-slate-800"
                     )}>
-                      {step.status === 'done' ? <Check className="w-5 h-5" /> : <span className="text-xs font-black">{i + 1}</span>}
+                      {step.status === 'done' ? <Check className="w-4 h-4" /> : <span className="text-[10px] font-black">{i + 1}</span>}
                     </div>
                     <span className={cn("text-[10px] font-black uppercase tracking-wider",
                       step.status === 'pending' ? "text-slate-300" : "text-slate-600 dark:text-slate-400"
@@ -181,31 +181,31 @@ export const OrdersView = ({
           </section>
 
           {/* Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <section className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <section className="space-y-3">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Informações Básicas</h4>
               <Card className="divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
-                <div className="p-5 flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                    <User className="w-6 h-6" />
+                <div className="p-4 flex items-center gap-4">
+                  <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                    <User className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cliente</p>
                     <p className="font-bold">{selectedOrder.customerName}</p>
                   </div>
                 </div>
-                <div className="p-5 flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                    <Smartphone className="w-6 h-6" />
+                <div className="p-4 flex items-center gap-4">
+                  <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                    <Smartphone className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Aparelho</p>
                     <p className="font-bold">{selectedOrder.device}</p>
                   </div>
                 </div>
-                <div className="p-5 flex items-center gap-4">
-                  <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-6 h-6" />
+                <div className="p-4 flex items-center gap-4">
+                  <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-5 h-5" />
                   </div>
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Valor Estimado</p>
@@ -215,11 +215,11 @@ export const OrdersView = ({
               </Card>
             </section>
 
-            <section className="space-y-4">
+            <section className="space-y-3">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Defeito Relatado</h4>
-              <Card className="p-6 bg-amber-50/30 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/40">
-                <div className="flex items-start gap-4">
-                  <AlertCircle className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
+              <Card className="p-5 bg-amber-50/20 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/40 h-full">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300">
                     {selectedOrder.problem}
                   </p>
@@ -228,24 +228,24 @@ export const OrdersView = ({
             </section>
           </div>
 
-          <section className="space-y-4">
+          <section className="space-y-3 mt-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Ações de Status</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {statusOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => onUpdateStatus(selectedOrder.id, opt.value)}
                   className={cn(
-                    "p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all active:scale-95 group relative",
+                    "p-3 rounded-xl flex flex-col items-center gap-1.5 transition-all active:scale-95 group relative border-2",
                     selectedOrder.status === opt.value
-                      ? "bg-primary border-primary text-white shadow-xl shadow-primary/20 scale-105 z-10"
-                      : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-800 hover:border-primary/30"
+                      ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105 z-10"
+                      : "bg-white dark:bg-slate-800 border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                   )}
                 >
-                  <opt.icon className={cn("size-6 transition-transform group-hover:rotate-6",
+                  <opt.icon className={cn("size-5 transition-transform group-hover:rotate-6",
                     selectedOrder.status === opt.value ? "text-white" : "text-slate-400"
                   )} />
-                  <span className="text-[10px] font-black uppercase tracking-wider">{opt.label}</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest">{opt.label}</span>
                   {selectedOrder.status === opt.value && (
                     <div className="absolute -top-2 -right-2 size-6 bg-white text-primary rounded-full flex items-center justify-center shadow-lg border-2 border-primary">
                       <Check className="size-4" />

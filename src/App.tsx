@@ -254,6 +254,20 @@ export default function App() {
       refreshOrders();
       refreshInventory();
       refreshPrices();
+
+      // Real-time listener for Orders
+      if (supabase) {
+        const orderSubscription = supabase.channel('public:orders')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+            console.log('Realtime change received!', payload);
+            refreshOrders();
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(orderSubscription);
+        };
+      }
     }
   }, [currentUser]);
 
