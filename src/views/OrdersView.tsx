@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check, RefreshCw, Box, User, ArrowUpRight, Trash2, Smartphone, DollarSign, AlertCircle } from 'lucide-react';
+import { Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check, RefreshCw, Box, User, ArrowUpRight, Trash2, Smartphone, DollarSign, AlertCircle, MoreVertical } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
@@ -30,6 +30,7 @@ export const OrdersView = ({
   onTrack: (id: string) => void
 }) => {
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
+  const [showMobileActions, setShowMobileActions] = React.useState(false);
   const selectedOrder = orders.find(o => o.id === selectedOrderId);
 
   if (!selectedOrderId || !selectedOrder) {
@@ -117,37 +118,76 @@ export const OrdersView = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
       {/* Detail Header - Pinned */}
-      <div className="p-4 pt-safe pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={onBack} className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-90">
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div className="flex gap-2">
-            <button onClick={() => onTrack(selectedOrder.id)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95" title="Rastrear">
-              <ArrowUpRight className="w-5 h-5" />
+      <div className="p-3 pt-safe border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+            <button onClick={onBack} className="p-2 shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-90">
+              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
             </button>
-            {currentUser.role !== 'funcionario' && (
-              <>
-                <button onClick={() => onEdit(selectedOrder)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95" title="Editar">
-                  <Edit2 className="w-5 h-5" />
-                </button>
-                <button onClick={() => setDeleteId(selectedOrder.id)} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95" title="Remover">
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </>
-            )}
+            
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <div className="size-8 md:size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-inner">
+                <Laptop className="w-4 h-4 md:w-5 md:h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                 <div className="flex items-center gap-2">
+                    <h3 className="text-sm md:text-base font-black text-slate-800 dark:text-white truncate max-w-[120px] md:max-w-xs">{selectedOrder.customerName}</h3>
+                    <span className="text-[9px] md:text-[10px] font-black tracking-widest bg-primary text-white px-1.5 py-0.5 rounded uppercase hidden sm:inline-block">#{selectedOrder.id}</span>
+                 </div>
+                 <p className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider truncate">{selectedOrder.device}</p>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex items-start gap-4">
-          <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 rotate-3 shadow-inner">
-            <Laptop className="w-6 h-6" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xl font-black text-slate-800 dark:text-white truncate">{selectedOrder.customerName}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] font-black tracking-widest bg-primary text-white px-2 py-0.5 rounded uppercase">#{selectedOrder.id}</span>
-              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">{selectedOrder.device}</span>
+          
+          <div className="flex items-center gap-1 md:gap-2 shrink-0">
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-2">
+              <button onClick={() => onTrack(selectedOrder.id)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Rastrear">
+                 <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5" />
+                 <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline-block">Rastrear</span>
+              </button>
+              {currentUser.role !== 'funcionario' && (
+                <>
+                  <button onClick={() => onEdit(selectedOrder)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Editar">
+                    <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline-block">Editar</span>
+                  </button>
+                  <button onClick={() => setDeleteId(selectedOrder.id)} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Remover">
+                    <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:inline-block">Excluir</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Mobile Actions Dropdown Toggle */}
+            <div className="md:hidden relative">
+               <button onClick={() => setShowMobileActions(!showMobileActions)} className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 rounded-xl transition-all active:scale-95 relative z-30">
+                 <MoreVertical className="w-5 h-5" />
+               </button>
+               
+               {/* Dropdown Menu */}
+               {showMobileActions && (
+                 <>
+                   <div className="fixed inset-0 z-20" onClick={() => setShowMobileActions(false)} />
+                   <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-30 flex flex-col gap-1 px-2 animate-in fade-in slide-in-from-top-2">
+                     <button onClick={() => { setShowMobileActions(false); onTrack(selectedOrder.id); }} className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3">
+                        <ArrowUpRight className="w-4 h-4 text-primary" /> Rastrear
+                     </button>
+                     {currentUser.role !== 'funcionario' && (
+                       <>
+                        <button onClick={() => { setShowMobileActions(false); onEdit(selectedOrder); }} className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3">
+                           <Edit2 className="w-4 h-4 text-primary" /> Editar
+                        </button>
+                        <hr className="border-slate-100 dark:border-slate-700 my-1 mx-2" />
+                        <button onClick={() => { setShowMobileActions(false); setDeleteId(selectedOrder.id); }} className="w-full text-left px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl flex items-center gap-3">
+                           <Trash2 className="w-4 h-4" /> Excluir
+                        </button>
+                       </>
+                     )}
+                   </div>
+                 </>
+               )}
             </div>
           </div>
         </div>
