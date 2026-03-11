@@ -64,7 +64,7 @@ export const CalculatorView = ({
       device: clientData.device,
       problem: problemDescription,
       value: total,
-      status: 'pending'
+      status: 'budget'
     });
     
     setPendingTotal(null);
@@ -120,13 +120,13 @@ export const CalculatorView = ({
                       <Icon className="size-7" />
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{price.category}</p>
-                      <h4 className="font-bold text-lg text-slate-800 dark:text-slate-100 truncate">{price.name}</h4>
+                    <div className="flex-1 min-w-0 pr-2">
+                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{price.category}</p>
+                       <h4 className="font-bold text-base sm:text-lg text-slate-800 dark:text-slate-100 leading-tight break-words">{price.name}</h4>
                     </div>
 
-                    <div className="text-right flex flex-col items-end gap-1">
-                      <p className={cn("text-xl font-black", isSelected ? "text-primary" : "text-slate-600 dark:text-slate-300")}>
+                    <div className="text-right flex flex-col items-end gap-1 shrink-0">
+                      <p className={cn("text-lg sm:text-xl font-black whitespace-nowrap", isSelected ? "text-primary" : "text-slate-600 dark:text-slate-300")}>
                         R$ {price.price.toFixed(0)}
                       </p>
                       {isSelected && (
@@ -229,9 +229,9 @@ export const CalculatorView = ({
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Serviços Selecionados</p>
                   {prices.filter(p => selectedIds[p.id]).map(i => (
-                    <div key={i.id} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm">
-                      <span className="text-sm font-bold">{i.name}</span>
-                      <span className="text-sm font-black text-primary">R$ {i.price.toFixed(0)}</span>
+                    <div key={i.id} className="flex justify-between items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm">
+                      <span className="text-xs sm:text-sm font-bold leading-tight break-words">{i.name}</span>
+                      <span className="text-xs sm:text-sm font-black text-primary shrink-0 whitespace-nowrap">R$ {i.price.toFixed(0)}</span>
                     </div>
                   ))}
                 </div>
