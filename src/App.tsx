@@ -248,6 +248,8 @@ export default function App() {
     }
   };
 
+  const [onlineEmployees, setOnlineEmployees] = useState<string[]>([]);
+  
   useEffect(() => {
     if (currentUser) {
       refreshEmployees();
@@ -256,18 +258,45 @@ export default function App() {
       refreshPrices();
 
       // Real-time listener for Orders
+      let orderSubscription: any;
       if (supabase) {
-        const orderSubscription = supabase.channel('public:orders')
+        orderSubscription = supabase.channel('public:orders')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
             console.log('Realtime change received!', payload);
             refreshOrders();
           })
           .subscribe();
-
-        return () => {
-          supabase.removeChannel(orderSubscription);
-        };
       }
+
+      // Real-time Presence for Employees
+      let presenceChannel: any;
+      if (supabase) {
+        presenceChannel = supabase.channel('online-users', {
+          config: { presence: { key: currentUser.id } }
+        });
+
+        presenceChannel
+          .on('presence', { event: 'sync' }, () => {
+            const state = presenceChannel.presenceState();
+            const onlineIds = Object.keys(state);
+            setOnlineEmployees(onlineIds);
+          })
+          .subscribe(async (status: string) => {
+            if (status === 'SUBSCRIBED') {
+              await presenceChannel.track({ user: currentUser.id, online_at: new Date().toISOString() });
+            }
+          });
+      }
+
+      return () => {
+        if (supabase) {
+          if (orderSubscription) supabase.removeChannel(orderSubscription);
+          if (presenceChannel) {
+             presenceChannel.untrack();
+             supabase.removeChannel(presenceChannel);
+          }
+        }
+      };
     }
   }, [currentUser]);
 
@@ -580,6 +609,7 @@ export default function App() {
               <SettingsView
                 currentUser={currentUser}
                 employees={employees}
+                onlineEmployees={onlineEmployees}
                 onRefreshEmployees={refreshEmployees}
                 onSendNotification={sendNotification}
                 onLogout={handleLogout}

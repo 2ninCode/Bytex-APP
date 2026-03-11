@@ -6,8 +6,9 @@ import { ConfirmModal } from '../ui/ConfirmModal';
 import { Employee, Role } from '../../types';
 import { supabase } from '../../lib/supabase';
 
-export const EmployeeManagementModal = ({ employees, onClose, onRefresh }: {
+export const EmployeeManagementModal = ({ employees, onlineEmployees, onClose, onRefresh }: {
   employees: Employee[],
+  onlineEmployees?: string[],
   onClose: () => void,
   onRefresh: () => void
 }) => {
@@ -106,29 +107,43 @@ export const EmployeeManagementModal = ({ employees, onClose, onRefresh }: {
                 <UserPlus className="w-4 h-4 mr-2" /> Adicionar Funcionário
               </Button>
               <div className="grid gap-3">
-                {employees.map(emp => (
-                  <div key={emp.id} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                    <div className="size-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center overflow-hidden shrink-0">
-                      {emp.avatarUrl ? <img src={emp.avatarUrl} alt={emp.name} className="w-full h-full object-cover" /> : <User className="w-6 h-6 text-slate-400" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold truncate">{emp.name}</p>
-                        {emp.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
-                        {emp.role === 'gestor' && <Shield className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
+                {employees.map(emp => {
+                  const isOnline = onlineEmployees?.includes(emp.id);
+                  return (
+                    <div key={emp.id} className="flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <div className="relative size-12 rounded-full flex items-center justify-center shrink-0">
+                        <div className="absolute inset-0 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                          {emp.avatarUrl ? <img src={emp.avatarUrl} alt={emp.name} className="w-full h-full object-cover" /> : <User className="w-6 h-6 text-slate-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                        </div>
+                        {isOnline && (
+                           <div className="absolute bottom-0 right-0 size-3.5 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full animate-pulse shadow-sm z-10 
+                      shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                        )}
                       </div>
-                      <p className="text-xs text-slate-500 truncate">{emp.jobTitle || 'Sem função'} • ID: {emp.loginId}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold truncate">{emp.name}</p>
+                          {emp.role === 'admin' && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                          {emp.role === 'gestor' && <Shield className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
+                           {isOnline && (
+                            <span className="text-[10px] font-black uppercase tracking-wider text-green-500 bg-green-50 dark:bg-green-500/10 px-2 py-0.5 rounded-full shrink-0">
+                              Online
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{emp.jobTitle || 'Sem função'} • ID: {emp.loginId}</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button onClick={() => setEditing(emp)} className="p-2 text-slate-400 hover:text-primary transition-colors">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setDeleteId(emp.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button onClick={() => setEditing(emp)} className="p-2 text-slate-400 hover:text-primary transition-colors">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setDeleteId(emp.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

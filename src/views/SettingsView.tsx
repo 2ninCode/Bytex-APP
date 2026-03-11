@@ -15,12 +15,12 @@ import { EmployeeManagementModal } from '../components/modals/EmployeeManagement
 import { SendNotificationModal } from '../components/modals/SendNotificationModal';
 
 export const SettingsView = ({
-  currentUser, employees, onRefreshEmployees, onSendNotification, onLogout,
+  currentUser, employees, onlineEmployees, onRefreshEmployees, onSendNotification, onLogout,
   darkMode, onToggleDark, soundEnabled, onToggleSound, orders,
   lowStockThreshold, onChangeLowStock, servicePrices, onSavePrice,
   onOpenNotifications, onDeleteOrder
 }: {
-  currentUser: Employee, employees: Employee[], onRefreshEmployees: () => void, onSendNotification: (n: Notification) => void,
+  currentUser: Employee, employees: Employee[], onlineEmployees: string[], onRefreshEmployees: () => void, onSendNotification: (n: Notification) => void,
   onLogout: () => void, darkMode: boolean, onToggleDark: () => void,
   soundEnabled: boolean, onToggleSound: () => void, orders: Order[],
   lowStockThreshold: number, onChangeLowStock: (v: number) => void,
@@ -85,7 +85,7 @@ export const SettingsView = ({
       {showPriceTable && <PriceTableModal prices={servicePrices} onSave={onSavePrice} onClose={() => setShowPriceTable(false)} />}
       {showSalesReport && <SalesReportModal orders={orders} onDeleteOrder={onDeleteOrder} onClose={() => setShowSalesReport(false)} />}
       {showHistory && <ServiceHistoryModal orders={orders} onClose={() => setShowHistory(false)} />}
-      {showEmployeeModal && <EmployeeManagementModal employees={employees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
+      {showEmployeeModal && <EmployeeManagementModal employees={employees} onlineEmployees={onlineEmployees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
       {showNotifModal && <SendNotificationModal employees={employees} onClose={() => setShowNotifModal(false)} onSend={(n) => { onSendNotification(n); setShowNotifModal(false); }} />}
 
       <div className="flex-1 overflow-y-auto scroll-smooth">
