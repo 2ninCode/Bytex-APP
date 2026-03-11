@@ -117,7 +117,7 @@ export const OrdersView = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
       {/* Detail Header - Pinned */}
-      <div className="p-4 pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
+      <div className="p-4 pt-safe pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
         <div className="flex items-center justify-between mb-4">
           <button onClick={onBack} className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-90">
             <ArrowLeft className="w-6 h-6" />

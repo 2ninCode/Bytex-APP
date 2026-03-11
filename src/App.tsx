@@ -496,37 +496,39 @@ export default function App() {
           onCancel={() => setShowOrderModal(false)}
         />
       )}      {/* Header */}
-      <header className="h-16 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/50">
-        <button
-          onClick={() => { setCurrentView('dashboard'); setSelectedOrderId(null); }}
-          className="flex items-center gap-4 hover:opacity-80 transition-opacity active:scale-95"
-        >
-          <div className="size-8 bg-primary/10 rounded-xl flex items-center justify-center p-1 shadow-inner overflow-hidden">
-            <img src="/pwa-192x192.png" alt="Bytex Logo" className="size-full object-contain" />
+      {!(currentView === 'orders' && selectedOrderId) && (
+        <header className="h-16 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/50">
+          <button
+            onClick={() => { setCurrentView('dashboard'); setSelectedOrderId(null); }}
+            className="flex items-center gap-4 hover:opacity-80 transition-opacity active:scale-95"
+          >
+            <div className="size-8 bg-primary/10 rounded-xl flex items-center justify-center p-1 shadow-inner overflow-hidden">
+              <img src="/pwa-192x192.png" alt="Bytex Logo" className="size-full object-contain" />
+            </div>
+            <h1 className="text-lg font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNotificationsModal(true)}
+              className="size-10 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
+            >
+              <Bell className="size-6 transition-transform group-hover:rotate-12" />
+              {notifications.length > 0 && (
+                <span className="absolute top-3 right-3 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
+              )}
+            </button>
+            <button
+              onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }}
+              className={cn(
+                "size-10 flex items-center justify-center rounded-2xl transition-all relative group",
+                currentView === 'settings' ? "text-primary bg-primary/10" : "text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800"
+              )}
+            >
+              <Settings className="size-6 transition-transform group-hover:rotate-45" />
+            </button>
           </div>
-          <h1 className="text-lg font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
-        </button>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowNotificationsModal(true)}
-            className="size-10 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
-          >
-            <Bell className="size-6 transition-transform group-hover:rotate-12" />
-            {notifications.length > 0 && (
-              <span className="absolute top-3 right-3 size-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900 shadow-sm animate-pulse" />
-            )}
-          </button>
-          <button
-            onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }}
-            className={cn(
-              "size-10 flex items-center justify-center rounded-2xl transition-all relative group",
-              currentView === 'settings' ? "text-primary bg-primary/10" : "text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800"
-            )}
-          >
-            <Settings className="size-6 transition-transform group-hover:rotate-45" />
-          </button>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-50 dark:bg-slate-900 pb-safe relative">
         <AnimatePresence mode="wait">
