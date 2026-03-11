@@ -205,6 +205,19 @@ export default function App() {
   }, [currentUser]);
 
   // Data Fetching
+  // Data Mapping Helpers
+  const mapOrder = (d: any): Order => ({
+    id: d.id, customerName: d.customer_name, customerEmail: d.customer_email,
+    customerPhone: d.customer_phone, device: d.device, serialNumber: d.serial_number,
+    problem: d.problem, value: d.value, status: d.status, createdAt: d.created_at
+  });
+  
+  const mapInventory = (d: any): InventoryItem => ({
+    id: d.id, name: d.name, desc: d.description, stock: d.stock,
+    location: d.location, category: d.category, iconKey: d.icon_key
+  });
+
+  // Data Fetching
   const refreshEmployees = async () => {
     if (!supabase) return;
     const { data } = await supabase.from('employees').select('*');
@@ -220,24 +233,13 @@ export default function App() {
   const refreshOrders = async () => {
     if (!supabase) return;
     const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (data) {
-      setOrders(data.map((d: any) => ({
-        id: d.id, customerName: d.customer_name, customerEmail: d.customer_email,
-        customerPhone: d.customer_phone, device: d.device, serialNumber: d.serial_number,
-        problem: d.problem, value: d.value, status: d.status, createdAt: d.created_at
-      })));
-    }
+    if (data) setOrders(data.map(mapOrder));
   };
 
   const refreshInventory = async () => {
     if (!supabase) return;
     const { data } = await supabase.from('inventory_items').select('*').order('name');
-    if (data) {
-      setInventoryItems(data.map((d: any) => ({
-        id: d.id, name: d.name, desc: d.description, stock: d.stock,
-        location: d.location, category: d.category, iconKey: d.icon_key
-      })));
-    }
+    if (data) setInventoryItems(data.map(mapInventory));
   };
 
   const refreshPrices = async () => {
@@ -255,8 +257,6 @@ export default function App() {
   useEffect(() => {
     if (currentUser) {
       refreshEmployees();
-      refreshOrders();
-      refreshInventory();
       refreshPrices();
 
       // Real-time listener for Orders
@@ -264,10 +264,37 @@ export default function App() {
       if (supabase) {
         orderSubscription = supabase.channel('public:orders')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-            console.log('Realtime change received!', payload);
-            refreshOrders();
+            console.log('Orders realtime change received!', payload);
+            if (payload.eventType === 'INSERT') {
+              setOrders(prev => [mapOrder(payload.new), ...prev].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            } else if (payload.eventType === 'UPDATE') {
+              setOrders(prev => prev.map(o => o.id === payload.new.id ? mapOrder(payload.new) : o));
+            } else if (payload.eventType === 'DELETE') {
+              setOrders(prev => prev.filter(o => o.id !== payload.old.id));
+            }
           })
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') refreshOrders();
+          });
+      }
+
+      // Real-time listener for Inventory
+      let inventorySubscription: any;
+      if (supabase) {
+        inventorySubscription = supabase.channel('public:inventory_items')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_items' }, (payload) => {
+            console.log('Inventory realtime change received!', payload);
+            if (payload.eventType === 'INSERT') {
+              setInventoryItems(prev => [...prev, mapInventory(payload.new)].sort((a,b) => a.name.localeCompare(b.name)));
+            } else if (payload.eventType === 'UPDATE') {
+              setInventoryItems(prev => prev.map(i => i.id === payload.new.id ? mapInventory(payload.new) : i).sort((a,b) => a.name.localeCompare(b.name)));
+            } else if (payload.eventType === 'DELETE') {
+              setInventoryItems(prev => prev.filter(i => i.id !== payload.old.id));
+            }
+          })
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') refreshInventory();
+          });
       }
 
       // Real-time Presence for Employees
@@ -293,6 +320,7 @@ export default function App() {
       return () => {
         if (supabase) {
           if (orderSubscription) supabase.removeChannel(orderSubscription);
+          if (inventorySubscription) supabase.removeChannel(inventorySubscription);
           if (presenceChannel) {
              presenceChannel.untrack();
              supabase.removeChannel(presenceChannel);
