@@ -207,8 +207,18 @@ export default function App() {
   // Data Fetching
   // Data Mapping Helpers
   const mapOrder = (d: any): Order => ({
-    id: d.id, customerName: d.customer_name, customerEmail: d.customer_email,
-    customerPhone: d.customer_phone, device: d.device, serialNumber: d.serial_number,
+    id: d.id, customerName: d.customer_name, customerEmail: d.customer_email || '',
+    customerPhone: d.customer_phone || '', customerId: d.customer_id,
+    customer: d.customer ? {
+      id: d.customer.id,
+      name: d.customer.name,
+      email: d.customer.email || '',
+      phone: d.customer.phone || '',
+      address: d.customer.address || '',
+      customerCode: d.customer.customer_code,
+      createdAt: d.customer.created_at
+    } : undefined,
+    device: d.device, serialNumber: d.serial_number || '',
     problem: d.problem, value: d.value, status: d.status, createdAt: d.created_at
   });
   
@@ -232,7 +242,7 @@ export default function App() {
 
   const refreshOrders = async () => {
     if (!supabase) return;
-    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    const { data } = await supabase.from('orders').select('*, customer:customers(*)').order('created_at', { ascending: false });
     if (data) setOrders(data.map(mapOrder));
   };
 
@@ -456,8 +466,9 @@ export default function App() {
       const id = (showOrderModal as Order).id;
       await supabase.from('orders').update({
         customer_name: data.customerName, customer_email: data.customerEmail,
-        customer_phone: data.customerPhone, device: data.device,
-        serial_number: data.serialNumber, problem: data.problem, value: data.value
+        customer_phone: data.customerPhone, customer_id: data.customerId,
+        device: data.device, serial_number: data.serialNumber, 
+        problem: data.problem, value: data.value
       }).eq('id', id);
       // Trigger automated notification for order update
       sendAutomatedNotification('Ordem de Serviço Atualizada', `A ordem #${id} foi atualizada.`, 'info', null, id);
@@ -466,9 +477,9 @@ export default function App() {
       const newId = `OS-${Math.floor(100000 + Math.random() * 900000)}`;
       await supabase.from('orders').insert({
         id: newId, customer_name: data.customerName, customer_email: data.customerEmail,
-        customer_phone: data.customerPhone, device: data.device,
-        serial_number: data.serialNumber, problem: data.problem, value: data.value,
-        status: 'budget'
+        customer_phone: data.customerPhone, customer_id: data.customerId,
+        device: data.device, serial_number: data.serialNumber, 
+        problem: data.problem, value: data.value, status: 'budget'
       });
       // Trigger automated notification for everyone about a new order!
       sendAutomatedNotification('Nova Ordem de Serviço', `Equipamento ${data.device} de ${data.customerName}`, 'info', null, newId);
@@ -504,7 +515,8 @@ export default function App() {
     if (!supabase) return;
     const newId = `OS-${Math.floor(100000 + Math.random() * 900000)}`;
     await supabase.from('orders').insert({
-      id: newId, customer_name: orderData.customerName, device: orderData.device, problem: orderData.problem,
+      id: newId, customer_name: orderData.customerName, customer_id: orderData.customerId,
+      device: orderData.device, problem: orderData.problem,
       value: orderData.value, status: 'budget'
     });
     // Send push notification when created from calculator

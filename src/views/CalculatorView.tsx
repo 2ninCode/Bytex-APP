@@ -1,15 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Search, ShoppingCart, Trash2, ChevronRight, 
   Smartphone, Laptop, Tablet, Watch, Cpu, Database, 
   Router, Cable, FlaskConical, X, AlertCircle, ShoppingBag,
-  DollarSign, Package, CheckCircle2
+  DollarSign, Package, CheckCircle2, User, MapPin
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { cn } from '../components/ui/utils';
-import { ServicePrice, Order } from '../types';
+import { ServicePrice, Order, Customer } from '../types';
+import { supabase } from '../lib/supabase';
 
 const CATEGORY_ICONS: Record<string, any> = {
   "Telas": Smartphone,
@@ -32,7 +33,35 @@ export const CalculatorView = ({
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingTotal, setPendingTotal] = useState<number | null>(null);
-  const [clientData, setClientData] = useState({ name: '', device: '', problem: '' });
+  const [clientData, setClientData] = useState({ 
+    customerId: '', 
+    customerName: '', 
+    device: '', 
+    problem: '' 
+  });
+  
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerResults, setShowCustomerResults] = useState(false);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      if (!supabase) return;
+      const { data } = await supabase.from('customers').select('*').order('name');
+      if (data) {
+        setCustomers(data.map(d => ({
+          id: d.id,
+          name: d.name,
+          email: d.email || '',
+          phone: d.phone || '',
+          address: d.address || '',
+          customerCode: d.customer_code,
+          createdAt: d.created_at
+        })));
+      }
+    };
+    fetchCustomers();
+  }, [pendingTotal]);
 
   const filteredPrices = useMemo(() => {
     return prices.filter(p => 
@@ -60,7 +89,8 @@ export const CalculatorView = ({
     const problemDescription = `[CALCULADORA] ${clientData.problem}\nServiços: ${selectedServices.map(s => s.name).join(', ')}`;
     
     onAddOrder({
-      customerName: clientData.name,
+      customerName: clientData.customerName,
+      customerId: clientData.customerId || undefined,
       device: clientData.device,
       problem: problemDescription,
       value: total,
@@ -69,8 +99,14 @@ export const CalculatorView = ({
     
     setPendingTotal(null);
     setSelectedIds({});
-    setClientData({ name: '', device: '', problem: '' });
+    setClientData({ customerId: '', customerName: '', device: '', problem: '' });
+    setCustomerSearch('');
   };
+
+  const filteredCustomers = customers.filter(c => 
+    c.name.toLowerCase().includes(customerSearch.toLowerCase()) || 
+    c.customerCode.toLowerCase().includes(customerSearch.toLowerCase())
+  );
 
   return (
     <div className="flex-1 flex flex-col min-h-0 relative bg-slate-50 dark:bg-slate-900">
@@ -204,13 +240,73 @@ export const CalculatorView = ({
               </div>
               
               <div className="p-8 space-y-6 overflow-y-auto flex-1">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Nome do Cliente</label>
-                  <input type="text" value={clientData.name}
-                    onChange={e => setClientData(d => ({ ...d, name: e.target.value }))}
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl h-14 px-5 outline-none focus:ring-2 focus:ring-primary font-medium"
-                    placeholder="Ex: João da Silva" />
+                <div className="space-y-2 relative">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Buscar Cliente Cadastrado</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 size-5" />
+                    <input 
+                      type="text" 
+                      value={customerSearch}
+                      onChange={e => {
+                        setCustomerSearch(e.target.value);
+                        setShowCustomerResults(true);
+                        setClientData(d => ({ ...d, customerName: e.target.value, customerId: '' }));
+                      }}
+                      onFocus={() => setShowCustomerResults(true)}
+                      className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl h-14 pl-12 pr-5 outline-none focus:ring-2 focus:ring-primary font-medium"
+                      placeholder="Busque por nome ou código..." 
+                    />
+                    
+                    <AnimatePresence>
+                      {showCustomerResults && customerSearch.length > 0 && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden"
+                        >
+                          {filteredCustomers.length === 0 ? (
+                            <div className="p-4 text-center text-xs text-slate-500 font-bold italic">Nenhum cliente encontrado</div>
+                          ) : (
+                            filteredCustomers.slice(0, 5).map(c => (
+                              <button
+                                key={c.id}
+                                onClick={() => {
+                                  setClientData(d => ({ ...d, customerId: c.id, customerName: c.name }));
+                                  setCustomerSearch(c.name);
+                                  setShowCustomerResults(false);
+                                }}
+                                className="w-full text-left p-4 hover:bg-primary/5 flex items-center justify-between group transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <User className="size-4" />
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-sm">{c.name}</p>
+                                    <p className="text-[10px] text-slate-400 font-black">#{c.customerCode}</p>
+                                  </div>
+                                </div>
+                                <ChevronRight className="size-4 text-slate-300 group-hover:text-primary" />
+                              </button>
+                            ))
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {clientData.customerId && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-2 p-3 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl flex items-center gap-3"
+                    >
+                      <CheckCircle2 className="size-4 text-emerald-500" />
+                      <span className="text-xs font-bold text-emerald-600">Cliente selecionado no banco</span>
+                    </motion.div>
+                  )}
                 </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Aparelho / Dispositivo</label>
                   <input type="text" value={clientData.device}
@@ -223,7 +319,7 @@ export const CalculatorView = ({
                   <textarea value={clientData.problem}
                     onChange={e => setClientData(d => ({ ...d, problem: e.target.value }))}
                     className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 outline-none focus:ring-2 focus:ring-primary font-medium min-h-[100px]"
-                    placeholder="Descreva o problema observado..." />
+                    placeholder="Descreva o problem observado..." />
                 </div>
                 
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 space-y-3">
@@ -239,7 +335,7 @@ export const CalculatorView = ({
 
               <div className="p-8 pt-4 flex gap-4 bg-slate-50 dark:bg-slate-800/20 shrink-0">
                 <Button variant="secondary" onClick={() => setPendingTotal(null)} className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl">Cancelar</Button>
-                <Button onClick={handleConfirm} disabled={!clientData.name || !clientData.device || !clientData.problem} className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-50">Criar Ordem</Button>
+                <Button onClick={handleConfirm} disabled={!clientData.customerName || !clientData.device || !clientData.problem} className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-50">Criar Ordem</Button>
               </div>
             </motion.div>
           </div>

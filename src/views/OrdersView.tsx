@@ -5,6 +5,7 @@ import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { cn } from '../components/ui/utils';
 import { Order, OrderStatus, Employee } from '../types';
+import { CustomerDetailsModal } from '../components/modals/CustomerDetailsModal';
 
 export const OrdersView = ({
   currentUser,
@@ -31,6 +32,7 @@ export const OrdersView = ({
 }) => {
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [showMobileActions, setShowMobileActions] = React.useState(false);
+  const [viewCustomerId, setViewCustomerId] = React.useState<string | null>(null);
   const selectedOrder = orders.find(o => o.id === selectedOrderId);
 
   if (!selectedOrderId || !selectedOrder) {
@@ -130,10 +132,15 @@ export const OrdersView = ({
                 <Laptop className="w-4 h-4 md:w-5 md:h-5" />
               </div>
               <div className="flex-1 min-w-0">
-                 <div className="flex items-center gap-2">
-                    <h3 className="text-sm md:text-base font-black text-slate-800 dark:text-white truncate max-w-[120px] md:max-w-xs">{selectedOrder.customerName}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 
+                      className="text-sm md:text-base font-black text-slate-800 dark:text-white truncate max-w-[120px] md:max-w-xs cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => selectedOrder.customerId && setViewCustomerId(selectedOrder.customerId)}
+                    >
+                      {selectedOrder.customerName}
+                    </h3>
                     <span className="text-[9px] md:text-[10px] font-black tracking-widest bg-primary text-white px-1.5 py-0.5 rounded uppercase hidden sm:inline-block">#{selectedOrder.id}</span>
-                 </div>
+                  </div>
                  <p className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider truncate">{selectedOrder.device}</p>
               </div>
             </div>
@@ -225,7 +232,13 @@ export const OrdersView = ({
             <section className="space-y-3">
               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Informações Básicas</h4>
               <Card className="divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
-                <div className="p-4 flex items-center gap-4">
+                <div 
+                  className={cn(
+                    "p-4 flex items-center gap-4",
+                    selectedOrder.customerId ? "cursor-pointer hover:bg-primary/[0.02] transition-colors" : ""
+                  )}
+                  onClick={() => selectedOrder.customerId && setViewCustomerId(selectedOrder.customerId)}
+                >
                   <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
                     <User className="w-5 h-5" />
                   </div>
@@ -310,6 +323,13 @@ export const OrdersView = ({
         }}
         onCancel={() => setDeleteId(null)}
       />
+
+      {viewCustomerId && (
+        <CustomerDetailsModal 
+          customerId={viewCustomerId} 
+          onClose={() => setViewCustomerId(null)} 
+        />
+      )}
     </div>
   );
 };

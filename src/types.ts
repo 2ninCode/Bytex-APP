@@ -18,11 +18,23 @@ export interface Employee {
   avatarUrl: string;
 }
 
+export interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  customerCode: string;
+  createdAt: string;
+}
+
 export interface Order {
   id: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  customerId?: string;
+  customer?: Customer;
   device: string;
   serialNumber: string;
   problem: string;

@@ -13,6 +13,7 @@ import { SalesReportModal } from '../components/modals/SalesReportModal';
 import { ServiceHistoryModal } from '../components/modals/ServiceHistoryModal';
 import { EmployeeManagementModal } from '../components/modals/EmployeeManagementModal';
 import { SendNotificationModal } from '../components/modals/SendNotificationModal';
+import { CustomerManagementModal } from '../components/modals/CustomerManagementModal';
 
 export const SettingsView = ({
   currentUser, employees, onlineEmployees, onRefreshEmployees, onSendNotification, onLogout,
@@ -32,6 +33,7 @@ export const SettingsView = ({
   const [showSalesReport, setShowSalesReport] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [localLowStock, setLocalLowStock] = useState(lowStockThreshold.toString());
 
@@ -45,6 +47,7 @@ export const SettingsView = ({
       title: "Administração",
       show: currentUser.role === 'admin',
       items: [
+        { icon: Users, label: "Gestão de Clientes", desc: "Cadastros e endereços", action: () => setShowCustomerModal(true) },
         { icon: Users, label: "Gestão de Funcionários", desc: "Equipe e acessos", action: () => setShowEmployeeModal(true) },
         { icon: Send, label: "Avisos da Equipe", desc: "Notificar todos", action: () => setShowNotifModal(true) },
       ]
@@ -86,6 +89,7 @@ export const SettingsView = ({
       {showSalesReport && <SalesReportModal orders={orders} onDeleteOrder={onDeleteOrder} onClose={() => setShowSalesReport(false)} />}
       {showHistory && <ServiceHistoryModal orders={orders} onClose={() => setShowHistory(false)} />}
       {showEmployeeModal && <EmployeeManagementModal employees={employees} onlineEmployees={onlineEmployees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
+      {showCustomerModal && <CustomerManagementModal onClose={() => setShowCustomerModal(false)} />}
       {showNotifModal && <SendNotificationModal employees={employees} onClose={() => setShowNotifModal(false)} onSend={(n) => { onSendNotification(n); setShowNotifModal(false); }} />}
 
       <div className="flex-1 overflow-y-auto scroll-smooth">

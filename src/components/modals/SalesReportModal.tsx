@@ -59,6 +59,8 @@ export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: {
       const statusValid = statusFilter === 'all' || o.status === statusFilter;
       const searchValid = !searchTerm || 
         o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.customerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (o.customer?.customerCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.device.toLowerCase().includes(searchTerm.toLowerCase()) ||
         o.id.toLowerCase().includes(searchTerm.toLowerCase());
       
