@@ -78,7 +78,7 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
       )}
       
       {/* Search Header - Pinned */}
-      <div className="p-6 pb-2 space-y-6 shrink-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10 border-b border-slate-100 dark:border-slate-800">
+      <div className="p-4 pb-2 space-y-4 shrink-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10 border-b border-slate-100 dark:border-slate-800">
         <div className="flex gap-3">
           <div className="relative group flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-6 h-6 group-focus-within:text-primary transition-colors" />
@@ -86,7 +86,7 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="block w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500 font-medium"
+              className="block w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-500 font-medium"
               placeholder="Buscar componentes..."
             />
           </div>
@@ -105,7 +105,7 @@ export const InventoryView = ({ currentUser, items, setItems, lowStockThreshold 
               key={cat} 
               onClick={() => setCategory(cat)}
               className={cn(
-                "shrink-0 px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all",
+                "shrink-0 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all",
                 category === cat 
                   ? "bg-primary text-white shadow-md shadow-primary/20" 
                   : "bg-white dark:bg-slate-800 text-slate-500 border border-slate-100 dark:border-slate-700 hover:bg-slate-50"

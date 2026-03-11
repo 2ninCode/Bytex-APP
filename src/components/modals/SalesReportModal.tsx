@@ -142,7 +142,7 @@ export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: {
         {/* Compact Header & Top Filters */}
         <div className="shrink-0 bg-white dark:bg-slate-900 z-20 border-b border-slate-100 dark:border-slate-800">
           {/* Header Bar */}
-          <div className="px-6 py-4 flex items-center justify-between gap-4">
+          <div className="px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <button 
                 onClick={onClose} 
@@ -166,14 +166,14 @@ export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: {
           </div>
 
           {/* New Filter Layout - Combined Period & Stats */}
-          <div className="px-6 pb-4 flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
+          <div className="px-4 pb-4 flex flex-col lg:flex-row items-stretch lg:items-center gap-4">
             <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl w-fit">
               {(['7d', '30d', '90d', 'year', 'all'] as const).map(p => (
                 <button 
                   key={p} 
                   onClick={() => setPeriod(p)}
                   className={cn(
-                    "px-4 py-2 rounded-lg text-[10px] font-black transition-all uppercase tracking-widest min-w-[60px]",
+                    "px-3 py-1.5 rounded-lg text-[10px] font-black transition-all uppercase tracking-widest min-w-[50px]",
                     period === p ? "bg-white dark:bg-slate-700 text-primary shadow-sm" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                   )}
                 >

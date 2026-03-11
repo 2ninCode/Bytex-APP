@@ -427,15 +427,15 @@ export default function App() {
     refreshOrders();
   };
 
-  const handleCalculatorAddOrder = async (val: number, client: { name: string; device: string; problem: string }) => {
+  const handleCalculatorAddOrder = async (orderData: Partial<Order>) => {
     if (!supabase) return;
     const newId = `OS-${Math.floor(100000 + Math.random() * 900000)}`;
     await supabase.from('orders').insert({
-      id: newId, customer_name: client.name, device: client.device, problem: client.problem,
-      value: val, status: 'budget'
+      id: newId, customer_name: orderData.customerName, device: orderData.device, problem: orderData.problem,
+      value: orderData.value, status: 'budget'
     });
     // Send push notification when created from calculator
-    sendAutomatedNotification('Nova Ordem via Calculadora', `Equipamento ${client.device} de ${client.name}`, 'info', null, newId);
+    sendAutomatedNotification('Nova Ordem via Calculadora', `Equipamento ${orderData.device} de ${orderData.customerName}`, 'info', null, newId);
     refreshOrders();
     navigateTo('orders', { orderId: newId });
   };
@@ -482,20 +482,20 @@ export default function App() {
           onCancel={() => setShowOrderModal(false)}
         />
       )}      {/* Header */}
-      <header className="h-20 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/50">
+      <header className="h-16 px-6 flex items-center justify-between sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-100 dark:border-slate-800/50">
         <button
           onClick={() => { setCurrentView('dashboard'); setSelectedOrderId(null); }}
           className="flex items-center gap-4 hover:opacity-80 transition-opacity active:scale-95"
         >
-          <div className="size-10 bg-primary/10 rounded-xl flex items-center justify-center p-1 shadow-inner overflow-hidden">
+          <div className="size-8 bg-primary/10 rounded-xl flex items-center justify-center p-1 shadow-inner overflow-hidden">
             <img src="/pwa-192x192.png" alt="Bytex Logo" className="size-full object-contain" />
           </div>
-          <h1 className="text-xl font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
+          <h1 className="text-lg font-black tracking-tighter text-slate-900 dark:text-white">Bytex</h1>
         </button>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowNotificationsModal(true)}
-            className="size-12 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
+            className="size-10 flex items-center justify-center rounded-2xl text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800 transition-all relative group"
           >
             <Bell className="size-6 transition-transform group-hover:rotate-12" />
             {notifications.length > 0 && (
@@ -505,7 +505,7 @@ export default function App() {
           <button
             onClick={() => { setCurrentView('settings'); setSelectedOrderId(null); }}
             className={cn(
-              "size-12 flex items-center justify-center rounded-2xl transition-all relative group",
+              "size-10 flex items-center justify-center rounded-2xl transition-all relative group",
               currentView === 'settings' ? "text-primary bg-primary/10" : "text-slate-400 hover:text-primary active:bg-slate-50 dark:active:bg-slate-800"
             )}
           >
@@ -585,7 +585,7 @@ export default function App() {
       </main>
 
       {/* Navigation */}
-      <nav className="h-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-around px-4 pb-safe sticky bottom-0 z-30 shadow-lg">
+      <nav className="h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-around px-4 pb-safe sticky bottom-0 z-30 shadow-lg">
         {menuItems.map((item) => {
           const isActive = currentView === item.id;
           return (
@@ -598,10 +598,10 @@ export default function App() {
               )}
             >
               <div className={cn(
-                "p-2.5 rounded-2xl transition-all duration-300 transform",
+                "p-2 rounded-2xl transition-all duration-300 transform",
                 isActive ? "bg-primary text-white shadow-lg shadow-primary/30 -translate-y-1 scale-110" : "bg-transparent"
               )}>
-                <item.icon className="size-6" strokeWidth={isActive ? 2.5 : 2} />
+                <item.icon className="size-5" strokeWidth={isActive ? 2.5 : 2} />
               </div>
               <span className={cn(
                 "text-[9px] font-black uppercase tracking-widest transition-all duration-300 whitespace-nowrap",
