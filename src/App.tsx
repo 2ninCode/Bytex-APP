@@ -171,6 +171,7 @@ export default function App() {
         message: notification.body || '',
         type: 'info',
         orderId: notification.data?.orderId,
+        notifId: notif.id,
         onClose: (id) => setActiveToasts(current => current.filter(t => t.id !== id))
       }]);
     });
@@ -182,17 +183,18 @@ export default function App() {
       
       if (orderId && currentUser) {
         navigateTo('orders', { orderId });
+        // Since it was tapped directly and navigated, we don't need to show it as unread
+      } else {
+        const notif: Notification = {
+          id: notification.id || Date.now().toString(), // Use notification.id
+          title: notification.title || 'Bytex',
+          message: notification.body || '',
+          type: 'info',
+          timestamp: new Date(),
+          orderId: notification.data?.orderId
+        };
+        setNotifications(prev => [notif, ...prev]);
       }
-
-      const notif: Notification = {
-        id: notification.id || Date.now().toString(), // Use notification.id
-        title: notification.title || 'Bytex',
-        message: notification.body || '',
-        type: 'info',
-        timestamp: new Date(),
-        orderId: notification.data?.orderId
-      };
-      setNotifications(prev => [notif, ...prev]);
     });
 
     return () => {
@@ -666,8 +668,9 @@ export default function App() {
             notifications={notifications}
             onClose={() => setShowNotificationsModal(false)}
             onClear={() => setNotifications([])}
-            onNotificationClick={(orderId) => {
+            onNotificationClick={(orderId, notifId) => {
                if (orderId) navigateTo('orders', { orderId });
+               if (notifId) setNotifications(prev => prev.filter(n => n.id !== notifId));
             }}
           />
         )}
@@ -690,6 +693,9 @@ export default function App() {
                     onClick={() => {
                        if (toast.orderId) {
                          navigateTo('orders', { orderId: toast.orderId });
+                         if (toast.notifId) {
+                           setNotifications(prev => prev.filter(n => n.id !== toast.notifId));
+                         }
                          toast.onClose(toast.id);
                        }
                     }}

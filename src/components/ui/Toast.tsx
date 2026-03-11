@@ -9,10 +9,11 @@ export interface ToastProps {
   message: string;
   type?: 'info' | 'success' | 'warning';
   orderId?: string;
+  notifId?: string;
   onClose: (id: string) => void;
 }
 
-export const Toast = ({ id, title, message, type = 'info', orderId, onClose }: ToastProps) => {
+export const Toast = ({ id, title, message, type = 'info', orderId, notifId, onClose }: ToastProps) => {
   useEffect(() => {
     const timer = setTimeout(() => onClose(id), 5000);
     return () => clearTimeout(timer);

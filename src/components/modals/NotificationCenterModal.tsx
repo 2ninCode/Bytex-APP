@@ -9,7 +9,7 @@ interface NotificationCenterModalProps {
   notifications: Notification[];
   onClose: () => void;
   onClear: () => void;
-  onNotificationClick: (orderId?: string) => void;
+  onNotificationClick: (orderId?: string, notifId?: string) => void;
 }
 
 export const NotificationCenterModal = ({ notifications, onClose, onClear, onNotificationClick }: NotificationCenterModalProps) => {
@@ -63,7 +63,7 @@ export const NotificationCenterModal = ({ notifications, onClose, onClear, onNot
                 key={notif.id}
                 onClick={() => {
                   if (notif.orderId) {
-                    onNotificationClick(notif.orderId);
+                    onNotificationClick(notif.orderId, notif.id);
                     onClose();
                   }
                 }}
