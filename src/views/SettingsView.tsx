@@ -45,12 +45,24 @@ export const SettingsView = ({
   const sections = [
     {
       title: "Administração",
-      show: currentUser.role === 'admin',
+      show: currentUser.role === 'admin' || currentUser.role === 'gestor',
       items: [
         { icon: Users, label: "Gestão de Clientes", desc: "Cadastros e endereços", action: () => setShowCustomerModal(true) },
-        { icon: Users, label: "Gestão de Funcionários", desc: "Equipe e acessos", action: () => setShowEmployeeModal(true) },
-        { icon: Send, label: "Avisos da Equipe", desc: "Notificar todos", action: () => setShowNotifModal(true) },
-      ]
+        { 
+          icon: Users, 
+          label: "Gestão de Funcionários", 
+          desc: "Equipe e acessos", 
+          action: () => setShowEmployeeModal(true),
+          hide: currentUser.role !== 'admin' 
+        },
+        { 
+          icon: Send, 
+          label: "Avisos da Equipe", 
+          desc: "Notificar todos", 
+          action: () => setShowNotifModal(true),
+          hide: currentUser.role !== 'admin'
+        },
+      ].filter(i => !i.hide)
     },
     {
       title: "Gestão de Negócios",

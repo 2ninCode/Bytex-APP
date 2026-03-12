@@ -5,15 +5,21 @@ import { Button } from '../ui/Button';
 import { Order, Customer } from '../../types';
 import { supabase } from '../../lib/supabase';
 
+// Modals
+import { CustomerManagementModal } from './CustomerManagementModal';
+
 export const OrderFormModal = ({
   order,
   onSave,
-  onCancel
+  onCancel,
+  currentUserRole
 }: {
   order?: Partial<Order>,
   onSave: (data: Partial<Order>) => void,
-  onCancel: () => void
+  onCancel: () => void,
+  currentUserRole?: string
 }) => {
+  const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
   const [formData, setFormData] = useState({
     customerId: order?.customerId || '',
     customerName: order?.customerName || '',
@@ -45,7 +51,22 @@ export const OrderFormModal = ({
         })));
       }
     };
+
     fetchCustomers();
+
+    // Real-time listener for customers
+    let subscription: any;
+    if (supabase) {
+      subscription = supabase.channel('order-form-customers')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => {
+          fetchCustomers();
+        })
+        .subscribe();
+    }
+
+    return () => {
+      if (subscription) supabase?.removeChannel(subscription);
+    };
   }, []);
 
   useEffect(() => {
@@ -116,7 +137,18 @@ export const OrderFormModal = ({
                         <div className="p-6 text-center space-y-3">
                           <UserPlus className="size-8 text-slate-300 mx-auto" />
                           <p className="text-xs text-slate-500 font-bold">Cliente não encontrado.</p>
-                          <p className="text-[10px] text-slate-400">Por favor, cadastre o cliente em Ajustes antes de criar a OS.</p>
+                          {(currentUserRole === 'admin' || currentUserRole === 'gestor') ? (
+                            <Button 
+                              variant="secondary" 
+                              size="sm" 
+                              onClick={() => setShowNewCustomerModal(true)}
+                              className="mt-2 text-[10px] font-black uppercase tracking-widest"
+                            >
+                              Cadastrar Novo Cliente
+                            </Button>
+                          ) : (
+                            <p className="text-[10px] text-slate-400">Por favor, peça a um administrador para cadastrar o cliente.</p>
+                          )}
                         </div>
                       ) : (
                         filteredCustomers.slice(0, 5).map(c => (
@@ -235,6 +267,14 @@ export const OrderFormModal = ({
             Salvar Ordem
           </Button>
         </div>
+
+        {showNewCustomerModal && (
+          <CustomerManagementModal onClose={() => {
+            setShowNewCustomerModal(false);
+            // Refresh customer list would happen via realtime in the fetch hook if implemented
+            // Otherwise we might need a refresh callback
+          }} />
+        )}
       </motion.div>
     </div>
   );

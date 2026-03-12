@@ -565,6 +565,7 @@ export default function App() {
           order={showOrderModal === true ? undefined : showOrderModal}
           onSave={handleSaveOrder}
           onCancel={() => setShowOrderModal(false)}
+          currentUserRole={currentUser?.role}
         />
       )}      {/* Header */}
       {!(currentView === 'orders' && selectedOrderId) && (

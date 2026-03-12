@@ -92,7 +92,9 @@ export const CustomerManagementModal = ({ onClose }: {
       
     } catch (e: any) {
       console.error('Error saving customer:', e);
-      setError(e.message || 'Erro ao salvar cliente. Verifique a conexão.');
+      const msg = e.message || e.details || 'Erro desconhecido';
+      const code = e.code ? ` (Erro: ${e.code})` : '';
+      setError(`Falha ao salvar: ${msg}${code}`);
     } finally {
       setLoading(false);
     }
