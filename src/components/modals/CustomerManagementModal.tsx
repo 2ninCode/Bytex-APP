@@ -260,9 +260,9 @@ export const CustomerManagementModal = ({ onClose }: {
                           <User className="w-7 h-7" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-black text-slate-800 dark:text-slate-100 truncate">{cust.name}</p>
-                            <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded-lg text-slate-500 tracking-wider">#{cust.customerCode}</span>
+                          <div className="flex items-start gap-2 mb-1">
+                            <p className="font-bold text-sm text-slate-800 dark:text-slate-100 whitespace-normal break-words">{cust.name}</p>
+                            <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded-lg text-slate-500 tracking-wider shrink-0">#{cust.customerCode}</span>
                           </div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1">
                             {cust.phone && (

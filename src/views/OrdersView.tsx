@@ -68,7 +68,7 @@ export const OrdersView = ({
                 >
                   <div 
                     className={cn(
-                      "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all active:scale-90",
+                      "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all active:scale-95 group/icon",
                       order.status === 'finished' ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary",
                       order.customerId ? "cursor-pointer hover:bg-primary hover:text-white" : ""
                     )}
@@ -251,10 +251,13 @@ export const OrdersView = ({
                   <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
                     <User className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cliente</p>
                     <p className="font-bold">{selectedOrder.customerName}</p>
                   </div>
+                  {selectedOrder.customerId && (
+                    <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Ver Perfil</button>
+                  )}
                 </div>
                 <div className="p-4 flex items-center gap-4">
                   <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">

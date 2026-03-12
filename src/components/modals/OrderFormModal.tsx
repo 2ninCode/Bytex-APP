@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Search, User, CheckCircle2, ChevronRight, UserPlus } from 'lucide-react';
+import { X, Search, User, CheckCircle2, ChevronRight, UserPlus, ArrowUpRight } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Order, Customer } from '../../types';
 import { supabase } from '../../lib/supabase';
 
 // Modals
 import { CustomerManagementModal } from './CustomerManagementModal';
+import { CustomerDetailsModal } from './CustomerDetailsModal';
 
 export const OrderFormModal = ({
   order,
@@ -20,6 +21,7 @@ export const OrderFormModal = ({
   currentUserRole?: string
 }) => {
   const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
+  const [viewCustomerId, setViewCustomerId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     customerId: order?.customerId || '',
     customerName: order?.customerName || '',
@@ -189,15 +191,17 @@ export const OrderFormModal = ({
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-100 dark:border-emerald-500/20 rounded-2xl flex items-center gap-3"
+                  onClick={() => setViewCustomerId(formData.customerId)}
+                  className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-100 dark:border-emerald-500/20 rounded-2xl flex items-center gap-3 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all group/picker"
                 >
-                  <div className="size-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <CheckCircle2 className="size-5" />
+                  <div className="size-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover/picker:scale-110 transition-transform">
+                    <User className="size-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="text-xs font-black text-emerald-600 uppercase tracking-wider">Cliente Validado</p>
                     {formData.customerPhone && <p className="text-[10px] text-emerald-500/70 font-bold">{formData.customerPhone}</p>}
                   </div>
+                  <ArrowUpRight className="size-4 text-emerald-400 opacity-0 group-hover/picker:opacity-100 transition-opacity" />
                 </motion.div>
               ) : (
                 <div className="p-4 bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-100 dark:border-amber-500/20 rounded-2xl flex items-center gap-3">
@@ -271,9 +275,11 @@ export const OrderFormModal = ({
         {showNewCustomerModal && (
           <CustomerManagementModal onClose={() => {
             setShowNewCustomerModal(false);
-            // Refresh customer list would happen via realtime in the fetch hook if implemented
-            // Otherwise we might need a refresh callback
           }} />
+        )}
+
+        {viewCustomerId && (
+          <CustomerDetailsModal customerId={viewCustomerId} onClose={() => setViewCustomerId(null)} />
         )}
       </motion.div>
     </div>
