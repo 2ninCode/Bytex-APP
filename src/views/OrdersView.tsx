@@ -66,11 +66,20 @@ export const OrdersView = ({
                   className="p-5 flex items-center gap-5 hover:border-primary/40 transition-all cursor-pointer group active:scale-[0.99]"
                   onClick={() => onSelect(order.id)}
                 >
-                  <div className={cn(
-                    "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                    order.status === 'finished' ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary"
-                  )}>
-                    <Laptop className="w-7 h-7" />
+                  <div 
+                    className={cn(
+                      "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all active:scale-90",
+                      order.status === 'finished' ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary",
+                      order.customerId ? "cursor-pointer hover:bg-primary hover:text-white" : ""
+                    )}
+                    onClick={(e) => {
+                      if (order.customerId) {
+                        e.stopPropagation();
+                        setViewCustomerId(order.customerId);
+                      }
+                    }}
+                  >
+                    {order.customerId ? <User className="w-7 h-7" /> : <Laptop className="w-7 h-7" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">

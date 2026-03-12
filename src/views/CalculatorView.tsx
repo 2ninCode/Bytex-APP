@@ -85,6 +85,8 @@ export const CalculatorView = ({
   };
 
   const handleConfirm = () => {
+    if (!clientData.customerId) return;
+    
     const selectedServices = prices.filter(p => selectedIds[p.id]);
     const problemDescription = `[CALCULADORA] ${clientData.problem}\nServiços: ${selectedServices.map(s => s.name).join(', ')}`;
     
@@ -335,7 +337,13 @@ export const CalculatorView = ({
 
               <div className="p-8 pt-4 flex gap-4 bg-slate-50 dark:bg-slate-800/20 shrink-0">
                 <Button variant="secondary" onClick={() => setPendingTotal(null)} className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl">Cancelar</Button>
-                <Button onClick={handleConfirm} disabled={!clientData.customerName || !clientData.device || !clientData.problem} className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-50">Criar Ordem</Button>
+                <Button 
+                  onClick={handleConfirm} 
+                  disabled={!clientData.customerId || !clientData.device || !clientData.problem} 
+                  className="flex-1 py-4 font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg disabled:opacity-50"
+                >
+                  Criar Ordem
+                </Button>
               </div>
             </motion.div>
           </div>
