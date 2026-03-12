@@ -60,7 +60,21 @@ export const CalculatorView = ({
         })));
       }
     };
+    
     fetchCustomers();
+
+    let subscription: any;
+    if (supabase) {
+      subscription = supabase.channel('calculator-customers')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' }, () => {
+          fetchCustomers();
+        })
+        .subscribe();
+    }
+
+    return () => {
+      if (subscription) supabase?.removeChannel(subscription);
+    };
   }, [pendingTotal]);
 
   const filteredPrices = useMemo(() => {
