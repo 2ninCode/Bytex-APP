@@ -4,7 +4,7 @@ import {
   Plus, Search, ShoppingCart, Trash2, ChevronRight, 
   Smartphone, Laptop, Tablet, Watch, Cpu, Database, 
   Router, Cable, FlaskConical, X, AlertCircle, ShoppingBag,
-  DollarSign, Package, CheckCircle2, User, MapPin
+  DollarSign, Package, CheckCircle2, User, MapPin, Monitor, Gamepad2
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -33,6 +33,7 @@ export const CalculatorView = ({
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingTotal, setPendingTotal] = useState<number | null>(null);
+  const [deviceType, setDeviceType] = useState<'normal' | 'gamer'>('normal');
   const [clientData, setClientData] = useState({ 
     customerId: '', 
     customerName: '', 
@@ -85,8 +86,10 @@ export const CalculatorView = ({
   }, [prices, searchTerm]);
 
   const total = useMemo(() => {
-    return prices.reduce((acc, p) => selectedIds[p.id] ? acc + p.price : acc, 0);
-  }, [prices, selectedIds]);
+    return prices.reduce((acc, p) =>
+      selectedIds[p.id] ? acc + (deviceType === 'gamer' ? p.priceGamer : p.price) : acc, 0
+    );
+  }, [prices, selectedIds, deviceType]);
 
   const selectedCount = Object.values(selectedIds).filter(Boolean).length;
 
@@ -144,6 +147,34 @@ export const CalculatorView = ({
             />
           </div>
 
+          {/* Device Type Toggle */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-2xl p-1.5">
+            <button
+              onClick={() => { setDeviceType('normal'); setSelectedIds({}); }}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300',
+                deviceType === 'normal'
+                  ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-md'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              )}
+            >
+              <Monitor className="size-4" />
+              Normal
+            </button>
+            <button
+              onClick={() => { setDeviceType('gamer'); setSelectedIds({}); }}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-300',
+                deviceType === 'gamer'
+                  ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              )}
+            >
+              <Gamepad2 className="size-4" />
+              Gamer
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 gap-4">
             {filteredPrices.map((price, i) => {
               const Icon = CATEGORY_ICONS[price.category] || Package;
@@ -178,11 +209,19 @@ export const CalculatorView = ({
                     </div>
 
                     <div className="text-right flex flex-col items-end gap-1 shrink-0">
-                      <p className={cn("text-lg sm:text-xl font-black whitespace-nowrap", isSelected ? "text-primary" : "text-slate-600 dark:text-slate-300")}>
-                        R$ {price.price.toFixed(0)}
+                      <p className={cn(
+                        "text-lg sm:text-xl font-black whitespace-nowrap",
+                        isSelected
+                          ? deviceType === 'gamer' ? 'text-violet-500' : 'text-primary'
+                          : 'text-slate-600 dark:text-slate-300'
+                      )}>
+                        R$ {(deviceType === 'gamer' ? price.priceGamer : price.price).toFixed(0)}
                       </p>
                       {isSelected && (
-                        <div className="size-6 bg-primary text-white rounded-full flex items-center justify-center animate-in zoom-in duration-300">
+                        <div className={cn(
+                          "size-6 text-white rounded-full flex items-center justify-center animate-in zoom-in duration-300",
+                          deviceType === 'gamer' ? 'bg-violet-500' : 'bg-primary'
+                        )}>
                           <CheckCircle2 className="size-4" />
                         </div>
                       )}

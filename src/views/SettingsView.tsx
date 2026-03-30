@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   CreditCard, BarChart3, CheckCircle2, User, ShieldCheck, 
   Moon, Bell, Globe, Info, LogOut, Crown, Shield, 
-  Edit2, Users, Send, ChevronRight, HelpCircle, Laptop, Smartphone
+  Edit2, Users, Send, ChevronRight, HelpCircle, Laptop, Smartphone, Wrench
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -14,18 +14,20 @@ import { ServiceHistoryModal } from '../components/modals/ServiceHistoryModal';
 import { EmployeeManagementModal } from '../components/modals/EmployeeManagementModal';
 import { SendNotificationModal } from '../components/modals/SendNotificationModal';
 import { CustomerManagementModal } from '../components/modals/CustomerManagementModal';
+import { ServiceManagementModal } from '../components/modals/ServiceManagementModal';
 
 export const SettingsView = ({
   currentUser, employees, onlineEmployees, onRefreshEmployees, onSendNotification, onLogout,
   darkMode, onToggleDark, soundEnabled, onToggleSound, orders,
   lowStockThreshold, onChangeLowStock, servicePrices, onSavePrice,
-  onOpenNotifications, onDeleteOrder
+  onRefreshPrices, onOpenNotifications, onDeleteOrder
 }: {
   currentUser: Employee, employees: Employee[], onlineEmployees: string[], onRefreshEmployees: () => void, onSendNotification: (n: Notification) => void,
   onLogout: () => void, darkMode: boolean, onToggleDark: () => void,
   soundEnabled: boolean, onToggleSound: () => void, orders: Order[],
   lowStockThreshold: number, onChangeLowStock: (v: number) => void,
-  servicePrices: ServicePrice[], onSavePrice: (id: string, price: number) => void,
+  servicePrices: ServicePrice[], onSavePrice: (id: string, price: number, field?: 'price' | 'price_gamer') => void,
+  onRefreshPrices: () => void,
   onOpenNotifications?: () => void,
   onDeleteOrder: (id: string) => Promise<void>
 }) => {
@@ -35,6 +37,7 @@ export const SettingsView = ({
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
+  const [showServiceMgmt, setShowServiceMgmt] = useState(false);
   const [localLowStock, setLocalLowStock] = useState(lowStockThreshold.toString());
 
   const handleSaveStockThreshold = () => {
@@ -69,6 +72,7 @@ export const SettingsView = ({
       show: true,
       items: [
         { icon: CreditCard, label: "Tabela de Preços", desc: "Valores dos serviços", highlight: true, action: () => setShowPriceTable(true) },
+        { icon: Wrench, label: "Gerenciar Serviços", desc: "Criar, editar e excluir", action: () => setShowServiceMgmt(true) },
         { icon: BarChart3, label: "Relatórios de Vendas", desc: "Resumo financeiro", action: () => setShowSalesReport(true), hide: currentUser.role === 'funcionario' },
         { icon: CheckCircle2, label: "Histórico de Serviços", desc: "Ordens concluídas", action: () => setShowHistory(true) },
       ].filter(i => !i.hide)
@@ -98,6 +102,7 @@ export const SettingsView = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 relative">
       {showPriceTable && <PriceTableModal prices={servicePrices} onSave={onSavePrice} onClose={() => setShowPriceTable(false)} />}
+      {showServiceMgmt && <ServiceManagementModal prices={servicePrices} onClose={() => { setShowServiceMgmt(false); onRefreshPrices(); }} />}
       {showSalesReport && <SalesReportModal orders={orders} onDeleteOrder={onDeleteOrder} onClose={() => setShowSalesReport(false)} />}
       {showHistory && <ServiceHistoryModal orders={orders} onClose={() => setShowHistory(false)} />}
       {showEmployeeModal && <EmployeeManagementModal employees={employees} onlineEmployees={onlineEmployees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}

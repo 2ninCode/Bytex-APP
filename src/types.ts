@@ -68,4 +68,5 @@ export interface ServicePrice {
   category: string;
   name: string;
   price: number;
+  priceGamer: number;
 }

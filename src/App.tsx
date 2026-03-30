@@ -257,7 +257,8 @@ export default function App() {
     const { data } = await supabase.from('service_prices').select('*').order('category');
     if (data) {
       setServicePrices(data.map((d: any) => ({
-        id: d.id, category: d.category, name: d.name, price: Number(d.price)
+        id: d.id, category: d.category, name: d.name,
+        price: Number(d.price), priceGamer: Number(d.price_gamer ?? 0)
       })));
     }
   };
@@ -525,9 +526,9 @@ export default function App() {
     navigateTo('orders', { orderId: newId });
   };
 
-  const handleSavePrice = async (id: string, price: number) => {
+  const handleSavePrice = async (id: string, price: number, field: 'price' | 'price_gamer' = 'price') => {
     if (!supabase) return;
-    await supabase.from('service_prices').update({ price }).eq('id', id);
+    await supabase.from('service_prices').update({ [field]: price }).eq('id', id);
     refreshPrices();
   };
 
@@ -665,6 +666,7 @@ export default function App() {
                 onChangeLowStock={setLowStockThreshold}
                 servicePrices={servicePrices}
                 onSavePrice={handleSavePrice}
+                onRefreshPrices={refreshPrices}
                 onOpenNotifications={() => setShowNotificationsModal(true)}
                 onDeleteOrder={handleDeleteOrder}
               />
