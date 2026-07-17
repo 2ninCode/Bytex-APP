@@ -38,6 +38,51 @@ interface Props {
   customerDevices: CustomerDevice[];
 }
 
+interface SectionProps {
+  id: string;
+  title: string;
+  subtitle?: string;
+  icon: any;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+  openSection: string;
+  setOpenSection: (id: string) => void;
+}
+
+const Section = ({ id, title, subtitle, icon: Icon, badge, children, openSection, setOpenSection }: SectionProps) => (
+  <div className={cn('border-2 rounded-2xl overflow-hidden transition-all', openSection === id ? 'border-primary/30 bg-primary/5 dark:bg-primary/5' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900')}>
+    <button
+      onClick={() => setOpenSection(openSection === id ? '' : id)}
+      className="w-full px-5 py-4 flex items-center gap-3 text-left"
+    >
+      <div className={cn('size-9 rounded-xl flex items-center justify-center shrink-0 transition-all', openSection === id ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-400')}>
+        <Icon className="size-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={cn('font-black text-sm', openSection === id ? 'text-primary' : 'text-slate-700 dark:text-slate-200')}>{title}</p>
+        {subtitle && <p className="text-[10px] text-slate-400 font-medium mt-0.5">{subtitle}</p>}
+      </div>
+      {badge}
+      <ChevronDown className={cn('size-4 text-slate-400 transition-transform shrink-0', openSection === id && 'rotate-180')} />
+    </button>
+    <AnimatePresence>
+      {openSection === id && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          className="overflow-hidden"
+        >
+          <div className="px-5 pb-5 space-y-3 border-t border-primary/10">
+            {children}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  </div>
+);
+
 // ── Component ────────────────────────────────────────────────────
 export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees, customerDevices }: Props) => {
   const isEdit = !!order?.id;
@@ -200,41 +245,6 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
 
   const hasRuimChecklist = Object.values(checklist).some(c => c?.status === 'ruim');
 
-  // ── Section Accordion ────────────────────────────────────────
-  const Section = ({ id, title, subtitle, icon: Icon, badge, children }: { id: string; title: string; subtitle?: string; icon: any; badge?: React.ReactNode; children: React.ReactNode }) => (
-    <div className={cn('border-2 rounded-2xl overflow-hidden transition-all', openSection === id ? 'border-primary/30 bg-primary/5 dark:bg-primary/5' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900')}>
-      <button
-        onClick={() => setOpenSection(openSection === id ? '' : id)}
-        className="w-full px-5 py-4 flex items-center gap-3 text-left"
-      >
-        <div className={cn('size-9 rounded-xl flex items-center justify-center shrink-0 transition-all', openSection === id ? 'bg-primary text-white shadow-md shadow-primary/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-400')}>
-          <Icon className="size-4" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className={cn('font-black text-sm', openSection === id ? 'text-primary' : 'text-slate-700 dark:text-slate-200')}>{title}</p>
-          {subtitle && <p className="text-[10px] text-slate-400 font-medium mt-0.5">{subtitle}</p>}
-        </div>
-        {badge}
-        <ChevronDown className={cn('size-4 text-slate-400 transition-transform shrink-0', openSection === id && 'rotate-180')} />
-      </button>
-      <AnimatePresence>
-        {openSection === id && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-5 pb-5 space-y-3 border-t border-primary/10">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-
   // ── Render ────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-md">
@@ -265,7 +275,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
 
           {/* ── SEÇÃO 1: CLIENTE & APARELHO ──────────────────── */}
-          <Section id="basic" title="Cliente & Aparelho" subtitle={selectedCustomer?.name || 'Selecione o cliente'} icon={User}>
+          <Section openSection={openSection} setOpenSection={setOpenSection} id="basic" title="Cliente & Aparelho" subtitle={selectedCustomer?.name || 'Selecione o cliente'} icon={User}>
             {/* Customer picker */}
             <div className="space-y-1 pt-4">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cliente *</label>
@@ -410,7 +420,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
           </Section>
 
           {/* ── SEÇÃO 2: RESPONSÁVEL ────────────────────────── */}
-          <Section id="responsible" title="Técnico Responsável" subtitle={employees.find(e => e.id === responsibleId)?.name || 'Selecione'} icon={Users}>
+          <Section openSection={openSection} setOpenSection={setOpenSection} id="responsible" title="Técnico Responsável" subtitle={employees.find(e => e.id === responsibleId)?.name || 'Selecione'} icon={Users}>
             <div className="space-y-2 pt-4">
               <div className="grid grid-cols-1 gap-2">
                 {employees.filter(e => e.role !== 'admin' || employees.length <= 3).map(emp => (
@@ -441,7 +451,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
           </Section>
 
           {/* ── SEÇÃO 3: PROBLEMA & OBSERVAÇÕES ─────────────── */}
-          <Section id="observations" title="Problema & Observações" subtitle="Diagnóstico e comunicação com cliente" icon={AlertCircle}>
+          <Section openSection={openSection} setOpenSection={setOpenSection} id="observations" title="Problema & Observações" subtitle="Diagnóstico e comunicação com cliente" icon={AlertCircle}>
             <div className="space-y-4 pt-4">
               {/* Problem (sempre interno) */}
               <div className="space-y-1">
@@ -490,6 +500,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
 
           {/* ── SEÇÃO 4: CHECKLIST ──────────────────────────── */}
           <Section
+            openSection={openSection} setOpenSection={setOpenSection}
             id="checklist"
             title="Checklist de Peças"
             subtitle="Saúde dos componentes"
@@ -547,6 +558,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
 
           {/* ── SEÇÃO 5: FOTOS E VÍDEOS ─────────────────────── */}
           <Section
+            openSection={openSection} setOpenSection={setOpenSection}
             id="media"
             title="Fotos e Vídeos"
             subtitle="Documentação visual"
@@ -634,6 +646,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
 
           {/* ── SEÇÃO 6: ORÇAMENTO ──────────────────────────── */}
           <Section
+            openSection={openSection} setOpenSection={setOpenSection}
             id="budget"
             title="Orçamento de Peças"
             subtitle="Itens e links de compra"

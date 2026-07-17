@@ -58,7 +58,7 @@ export const DashboardView = ({
 
   return (
     <div className="flex-1 overflow-y-auto scroll-smooth">
-      <div className="p-5 space-y-8 pb-32 max-w-2xl mx-auto">
+      <div className="p-5 space-y-8 pb-32 max-w-5xl mx-auto">
 
         {/* Saudação */}
         <div className="pt-2">
