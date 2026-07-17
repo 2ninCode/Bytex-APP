@@ -21,7 +21,7 @@ export const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }
     try {
       if (!supabase) throw new Error('Sem conexão com banco de dados.');
       
-      const email = loginId.includes('@') ? loginId.trim() : `${loginId.trim()}@bytex.com`;
+      const email = (loginId.includes('@') ? loginId.trim() : `${loginId.trim()}@bytex.com`).toLowerCase();
       const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
         email,
         password: password.trim()
