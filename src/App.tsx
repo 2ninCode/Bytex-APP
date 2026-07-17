@@ -51,7 +51,7 @@ export default function App() {
   const {
     employees, orders, inventoryItems, servicePrices, customerDevices,
     lowStockThreshold,
-    setInventoryItems, refreshEmployees, refreshOrders, refreshPrices,
+    setInventoryItems, refreshEmployees, refreshOrders, refreshPrices, refreshDevices,
   } = useSupabaseData(currentUser);
 
   const { onlineEmployees } = usePresence(currentUser);
@@ -219,6 +219,46 @@ export default function App() {
 
   const handleSaveOrder = async (data: Partial<Order>) => {
     if (!supabase) return;
+
+    // ── Auto-register device if it's new (no deviceId) ──────────
+    let resolvedDeviceId = data.deviceId || null;
+
+    if (!resolvedDeviceId && data.customerId && data.device?.trim()) {
+      // Check if a device with same serial already exists for this customer
+      const sn = data.serialNumber?.trim() || null;
+      let existingDeviceId: string | null = null;
+
+      if (sn) {
+        const { data: existing } = await supabase
+          .from('customer_devices')
+          .select('id')
+          .eq('customer_id', data.customerId)
+          .eq('serial_number', sn)
+          .maybeSingle();
+        if (existing) existingDeviceId = existing.id;
+      }
+
+      if (existingDeviceId) {
+        resolvedDeviceId = existingDeviceId;
+      } else {
+        // Create new device record
+        const { data: newDev } = await supabase
+          .from('customer_devices')
+          .insert({
+            customer_id: data.customerId,
+            name: data.device.trim(),
+            serial_number: sn,
+            specs: {},
+            notes: null,
+          })
+          .select('id')
+          .single();
+        if (newDev) resolvedDeviceId = newDev.id;
+        // Refresh device list in React Query
+        refreshDevices();
+      }
+    }
+
     const payload = {
       customer_name: data.customerName,
       customer_email: data.customerEmail,
@@ -228,9 +268,9 @@ export default function App() {
       serial_number: data.serialNumber,
       problem: data.problem,
       value: data.value,
-      // Novos campos V4
+      // V4 fields
       responsible_employee_id: data.responsibleEmployeeId || null,
-      device_id: data.deviceId || null,
+      device_id: resolvedDeviceId,
       observation_client: data.observationClient || null,
       technical_report: data.technicalReport || null,
       media_urls: data.mediaUrls || [],
@@ -250,6 +290,7 @@ export default function App() {
     setShowOrderModal(false);
     refreshOrders();
   };
+
 
   const handleUpdateOrderStatus = async (id: string, status: OrderStatus) => {
     if (!supabase) return;

@@ -1,15 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X, Search, ChevronDown, Plus, Trash2, RefreshCw, Upload, Link,
   Laptop, User, Users, Eye, EyeOff, ImageIcon, Video, Package,
   CheckCircle2, AlertCircle, HelpCircle, Cpu, HardDrive, Zap,
-  Monitor, Thermometer, Battery, Shield
+  Monitor, Thermometer, Battery, Shield, Sparkles, Brain, Copy, ChevronRight
 } from 'lucide-react';
 import { Order, Employee, CustomerDevice, Customer, Checklist, ChecklistItem, ChecklistStatus, BudgetItem, MediaFile } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { cn } from '../ui/utils';
 import { Button } from '../ui/Button';
+import { useAI } from '../../hooks/useAI';
 
 // ── Constants ────────────────────────────────────────────────────
 const CHECKLIST_COMPONENTS: { key: keyof Checklist; label: string; icon: any }[] = [
@@ -121,6 +122,15 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
   // ── Sections ─────────────────────────────────────────────────
   const [openSection, setOpenSection] = useState<string>('basic');
 
+  // ── AI State ─────────────────────────────────────────────────
+  const { summarizeDeviceHistory, suggestDiagnosis } = useAI();
+  const [deviceOrders, setDeviceOrders] = useState<Order[]>([]);
+  const [aiHistorySummary, setAiHistorySummary] = useState<string>('');
+  const [aiDiagnosis, setAiDiagnosis] = useState<string>('');
+  const [aiHistoryLoading, setAiHistoryLoading] = useState(false);
+  const [aiDiagnosisLoading, setAiDiagnosisLoading] = useState(false);
+  const diagnosisTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ── Effects ──────────────────────────────────────────────────
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -165,11 +175,37 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
     setCustomerSearch('');
   };
 
-  const handleSelectDevice = (dev: CustomerDevice) => {
+  const handleSelectDevice = async (dev: CustomerDevice) => {
     setSelectedDevice(dev);
     if (!device) setDevice(dev.name);
     if (!serialNumber) setSerialNumber(dev.serialNumber);
     setShowDeviceList(false);
+    setAiHistorySummary('');
+    setDeviceOrders([]);
+    setAiDiagnosis('');
+
+    // Fetch OS history for this device from Supabase
+    if (!supabase) return;
+    setAiHistoryLoading(true);
+    const { data } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('device_id', dev.id)
+      .order('created_at', { ascending: false });
+
+    if (data && data.length > 0) {
+      const mapped: Order[] = data.map((o: any) => ({
+        id: o.id, customerName: o.customer_name, customerEmail: o.customer_email || '',
+        customerPhone: o.customer_phone || '', device: o.device || '',
+        serialNumber: o.serial_number || '', problem: o.problem || '',
+        technicalReport: o.technical_report || '', observationClient: o.observation_client || '',
+        value: Number(o.value), status: o.status, createdAt: o.created_at,
+      }));
+      setDeviceOrders(mapped);
+      const summary = await summarizeDeviceHistory(mapped, dev);
+      setAiHistorySummary(summary);
+    }
+    setAiHistoryLoading(false);
   };
 
   // ── Checklist ────────────────────────────────────────────────
@@ -179,6 +215,24 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
       [key]: { ...(prev[key] || { status: 'nao_testado' }), [field]: val }
     }));
   };
+
+  // ── AI Diagnosis (debounced on problem change) ───────────────
+  useEffect(() => {
+    if (diagnosisTimerRef.current) clearTimeout(diagnosisTimerRef.current);
+    if (!problem.trim() || problem.trim().length < 10) {
+      setAiDiagnosis('');
+      return;
+    }
+    diagnosisTimerRef.current = setTimeout(async () => {
+      setAiDiagnosisLoading(true);
+      const result = await suggestDiagnosis(problem, deviceOrders, selectedDevice);
+      setAiDiagnosis(result);
+      setAiDiagnosisLoading(false);
+    }, 900);
+    return () => {
+      if (diagnosisTimerRef.current) clearTimeout(diagnosisTimerRef.current);
+    };
+  }, [problem, selectedDevice, deviceOrders]);
 
   // ── Media Upload ─────────────────────────────────────────────
   const handleFileUpload = async (file: File) => {
@@ -453,7 +507,40 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
           {/* ── SEÇÃO 3: PROBLEMA & OBSERVAÇÕES ─────────────── */}
           <Section openSection={openSection} setOpenSection={setOpenSection} id="observations" title="Problema & Observações" subtitle="Diagnóstico e comunicação com cliente" icon={AlertCircle}>
             <div className="space-y-4 pt-4">
-              {/* Problem (sempre interno) */}
+
+              {/* ── AI HISTORY SUMMARY ─────────────────────────── */}
+              <AnimatePresence>
+                {(aiHistoryLoading || aiHistorySummary) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="rounded-2xl border-2 border-violet-200 dark:border-violet-800/40 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/10 p-4"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="size-6 rounded-lg bg-violet-500 flex items-center justify-center shrink-0">
+                        <Sparkles className="size-3.5 text-white" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-600 dark:text-violet-400">Histórico com IA</span>
+                      {deviceOrders.length > 0 && (
+                        <span className="ml-auto text-[9px] bg-violet-100 dark:bg-violet-900/40 text-violet-600 px-1.5 py-0.5 rounded-lg font-black">
+                          {deviceOrders.length} OS anterior{deviceOrders.length !== 1 ? 'es' : ''}
+                        </span>
+                      )}
+                    </div>
+                    {aiHistoryLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-violet-500">
+                        <div className="size-3.5 border-2 border-violet-300 border-t-violet-500 rounded-full animate-spin shrink-0" />
+                        <span className="font-medium">Analisando histórico...</span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-violet-700 dark:text-violet-300 font-medium leading-relaxed">{aiHistorySummary}</p>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Problem */}
               <div className="space-y-1">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Descrição do Problema *</label>
                 <textarea
@@ -463,6 +550,45 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
                   className="w-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-medium outline-none focus:border-primary min-h-[90px] resize-none leading-relaxed"
                 />
               </div>
+
+              {/* ── AI DIAGNOSIS SUGGESTION ────────────────────── */}
+              <AnimatePresence>
+                {(aiDiagnosisLoading || aiDiagnosis) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="rounded-2xl border-2 border-amber-200 dark:border-amber-800/40 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 p-4"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="size-6 rounded-lg bg-amber-500 flex items-center justify-center shrink-0">
+                        <Brain className="size-3.5 text-white" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Sugestão de Diagnóstico IA</span>
+                      {!aiDiagnosisLoading && aiDiagnosis && (
+                        <button
+                          onClick={() => setTechnicalReport(prev => prev ? `${prev}\n\n--- Sugestão IA ---\n${aiDiagnosis}` : aiDiagnosis)}
+                          className="ml-auto flex items-center gap-1 text-[9px] bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-lg font-black hover:bg-amber-200 transition-colors"
+                        >
+                          <Copy className="size-2.5" /> Copiar ao Laudo
+                        </button>
+                      )}
+                    </div>
+                    {aiDiagnosisLoading ? (
+                      <div className="flex items-center gap-2 text-xs text-amber-600">
+                        <div className="size-3.5 border-2 border-amber-300 border-t-amber-500 rounded-full animate-spin shrink-0" />
+                        <span className="font-medium">Analisando problema...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {aiDiagnosis.split('\n').filter(l => l.trim()).map((line, i) => (
+                          <p key={i} className="text-xs text-amber-800 dark:text-amber-200 font-medium leading-relaxed">{line}</p>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Observation for client — PUBLIC */}
               <div className="space-y-1">
@@ -497,6 +623,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
               </div>
             </div>
           </Section>
+
 
           {/* ── SEÇÃO 4: CHECKLIST ──────────────────────────── */}
           <Section

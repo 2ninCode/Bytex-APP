@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, User, MapPin, Phone, Mail, Laptop, Calendar, CheckCircle2, Package, Plus, Trash2, RefreshCw, Cpu, HardDrive, Zap } from 'lucide-react';
+import { X, User, MapPin, Phone, Mail, Laptop, Calendar, CheckCircle2, Package, Plus, Trash2, RefreshCw, Cpu, HardDrive, Zap, Edit2, Save, Check } from 'lucide-react';
 import { Order, CustomerDevice } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { format, parseISO } from 'date-fns';
@@ -29,6 +29,9 @@ export const CustomerDetailsModal = ({ customerId, onClose }: {
   const [addingDevice, setAddingDevice] = useState(false);
   const [deviceForm, setDeviceForm] = useState({ name: '', serialNumber: generateSN(), specs: { ram: '', storage: '', cpu: '', gpu: '', os: '' }, notes: '' });
   const [savingDevice, setSavingDevice] = useState(false);
+  const [editingDeviceId, setEditingDeviceId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', serialNumber: '', specs: { ram: '', storage: '', cpu: '', gpu: '', os: '' }, notes: '' });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchData = async () => {
     if (!supabase) return;
@@ -92,6 +95,36 @@ export const CustomerDetailsModal = ({ customerId, onClose }: {
   const handleDeleteDevice = async (id: string) => {
     if (!supabase) return;
     await supabase.from('customer_devices').delete().eq('id', id);
+    fetchData();
+  };
+
+  const handleStartEdit = (device: CustomerDevice) => {
+    setEditingDeviceId(device.id);
+    setEditForm({
+      name: device.name,
+      serialNumber: device.serialNumber || '',
+      specs: {
+        ram: (device.specs as any)?.ram || '',
+        storage: (device.specs as any)?.storage || '',
+        cpu: (device.specs as any)?.cpu || '',
+        gpu: (device.specs as any)?.gpu || '',
+        os: (device.specs as any)?.os || '',
+      },
+      notes: device.notes || '',
+    });
+  };
+
+  const handleUpdateDevice = async (id: string) => {
+    if (!supabase || !editForm.name.trim()) return;
+    setSavingEdit(true);
+    await supabase.from('customer_devices').update({
+      name: editForm.name.trim(),
+      serial_number: editForm.serialNumber.trim() || null,
+      specs: editForm.specs,
+      notes: editForm.notes.trim() || null,
+    }).eq('id', id);
+    setSavingEdit(false);
+    setEditingDeviceId(null);
     fetchData();
   };
 
@@ -283,40 +316,92 @@ export const CustomerDetailsModal = ({ customerId, onClose }: {
                 ) : (
                   <div className="space-y-3">
                     {devices.map(device => (
-                      <div key={device.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-500">
-                              <Laptop className="size-5" />
-                            </div>
-                            <div>
-                              <p className="font-bold text-sm">{device.name}</p>
-                              <p className="text-[10px] font-mono text-slate-400 font-bold">S/N: {device.serialNumber || '—'}</p>
-                            </div>
+                    <div key={device.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl overflow-hidden">
+                      {editingDeviceId === device.id ? (
+                        /* ── INLINE EDIT FORM ── */
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Editando PC</span>
+                            <button onClick={() => setEditingDeviceId(null)} className="text-slate-400 hover:text-slate-600 text-xs font-bold">Cancelar</button>
                           </div>
-                          <button onClick={() => handleDeleteDevice(device.id)} className="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                        {Object.entries(device.specs).filter(([, v]) => v).length > 0 && (
-                          <div className="grid grid-cols-2 gap-1.5">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome *</label>
+                            <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-indigo-400" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Número de Série</label>
+                            <input value={editForm.serialNumber} onChange={e => setEditForm(f => ({ ...f, serialNumber: e.target.value }))} className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono font-bold outline-none focus:border-indigo-400" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
                             {[
-                              { key: 'ram', icon: HardDrive, label: 'RAM' },
-                              { key: 'storage', icon: HardDrive, label: 'Armazenamento' },
-                              { key: 'cpu', icon: Cpu, label: 'CPU' },
-                              { key: 'gpu', icon: Zap, label: 'GPU' },
-                            ].filter(f => (device.specs as any)[f.key]).map(f => (
-                              <div key={f.key} className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 dark:bg-slate-700/50 rounded-lg px-2 py-1">
-                                <f.icon className="size-3 shrink-0" />
-                                <span className="truncate">{(device.specs as any)[f.key]}</span>
+                              { key: 'ram', label: 'RAM', placeholder: '8GB DDR4' },
+                              { key: 'storage', label: 'Armazenamento', placeholder: '256GB SSD' },
+                              { key: 'cpu', label: 'Processador', placeholder: 'Intel i5-10th' },
+                              { key: 'gpu', label: 'Placa de Vídeo', placeholder: 'GTX 1650' },
+                              { key: 'os', label: 'Sistema Operacional', placeholder: 'Windows 11' },
+                            ].map(field => (
+                              <div key={field.key} className="space-y-1">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{field.label}</label>
+                                <input
+                                  value={(editForm.specs as any)[field.key]}
+                                  onChange={e => setEditForm(f => ({ ...f, specs: { ...f.specs, [field.key]: e.target.value } }))}
+                                  placeholder={field.placeholder}
+                                  className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs font-medium outline-none focus:border-indigo-400"
+                                />
                               </div>
                             ))}
                           </div>
-                        )}
-                        {device.notes && (
-                          <p className="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">{device.notes}</p>
-                        )}
-                      </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Observações</label>
+                            <textarea value={editForm.notes} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))} className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-medium outline-none focus:border-indigo-400 min-h-[60px] resize-none" />
+                          </div>
+                          <Button onClick={() => handleUpdateDevice(device.id)} disabled={savingEdit || !editForm.name.trim()} className="w-full bg-indigo-500 hover:bg-indigo-600 text-white">
+                            <Save className="size-4 mr-2" />{savingEdit ? 'Salvando...' : 'Salvar Alterações'}
+                          </Button>
+                        </div>
+                      ) : (
+                        /* ── VIEW MODE ── */
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="size-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-500">
+                                <Laptop className="size-5" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm">{device.name}</p>
+                                <p className="text-[10px] font-mono text-slate-400 font-bold">S/N: {device.serialNumber || '—'}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => handleStartEdit(device)} className="p-1.5 text-slate-300 hover:text-indigo-500 transition-colors">
+                                <Edit2 className="size-4" />
+                              </button>
+                              <button onClick={() => handleDeleteDevice(device.id)} className="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          </div>
+                          {Object.entries(device.specs).filter(([, v]) => v).length > 0 && (
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {[
+                                { key: 'ram', icon: HardDrive, label: 'RAM' },
+                                { key: 'storage', icon: HardDrive, label: 'Armazenamento' },
+                                { key: 'cpu', icon: Cpu, label: 'CPU' },
+                                { key: 'gpu', icon: Zap, label: 'GPU' },
+                              ].filter(f => (device.specs as any)[f.key]).map(f => (
+                                <div key={f.key} className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-50 dark:bg-slate-700/50 rounded-lg px-2 py-1">
+                                  <f.icon className="size-3 shrink-0" />
+                                  <span className="truncate">{(device.specs as any)[f.key]}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {device.notes && (
+                            <p className="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700">{device.notes}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     ))}
                   </div>
                 )}
