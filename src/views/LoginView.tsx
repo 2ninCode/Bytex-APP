@@ -20,28 +20,41 @@ export const LoginView = ({ onLogin }: { onLogin: (employee: Employee) => void }
     setLoading(true); setError('');
     try {
       if (!supabase) throw new Error('Sem conexão com banco de dados.');
-      const { data, error: dbErr } = await supabase
+      
+      const email = loginId.includes('@') ? loginId.trim() : `${loginId.trim()}@bytex.com`;
+      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+        email,
+        password: password.trim()
+      });
+      
+      if (authErr || !authData.user) {
+        throw new Error('ID/E-mail ou senha incorretos.');
+      }
+
+      const { data: profile, error: dbErr } = await supabase
         .from('employees')
         .select('*')
-        .eq('login_id', loginId.trim())
+        .eq('id', authData.user.id)
         .single();
-      if (dbErr || !data) { setError('ID não encontrado.'); return; }
-      if (data.password !== password) { setError('Senha incorreta.'); return; }
-      const emp: Employee = {
-        id: data.id, loginId: data.login_id, password: data.password,
-        name: data.name, cpf: data.cpf || '', phone: data.phone || '',
-        email: data.email || '', birthdate: data.birthdate || '',
-        job_title: data.job_title || '', role: data.role as Role,
-        avatar_url: data.avatar_url || '',
-      } as any; 
-      // Mapping back to our interface names if they differ from DB
+
+      if (dbErr || !profile) {
+        throw new Error('Perfil de funcionário não encontrado.');
+      }
+
       const mappedEmp: Employee = {
-        id: data.id, loginId: data.login_id, password: data.password,
-        name: data.name, cpf: data.cpf || '', phone: data.phone || '',
-        email: data.email || '', birthdate: data.birthdate || '',
-        jobTitle: data.job_title || '', role: data.role as Role,
-        avatarUrl: data.avatar_url || '',
+        id: profile.id,
+        loginId: profile.login_id,
+        password: '', // Senha protegida no Supabase Auth
+        name: profile.name,
+        cpf: profile.cpf || '',
+        phone: profile.phone || '',
+        email: profile.email || '',
+        birthdate: profile.birthdate || '',
+        jobTitle: profile.job_title || '',
+        role: profile.role as Role,
+        avatarUrl: profile.avatar_url || '',
       };
+
       if (remember) localStorage.setItem('bytex_remember', JSON.stringify(mappedEmp));
       onLogin(mappedEmp);
     } catch (e: any) {

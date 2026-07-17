@@ -17,40 +17,77 @@ export const EmployeeManagementModal = ({ employees, onlineEmployees, onClose, o
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleSave = async () => {
-    if (!editing?.name || !editing?.loginId || !editing?.password) {
-      alert('Preencha Nome, ID e Senha.');
+    const isNew = !editing?.id;
+    if (!editing?.name || !editing?.loginId || (isNew && !editing?.password)) {
+      alert(isNew ? 'Preencha Nome, ID e Senha.' : 'Preencha Nome e ID.');
       return;
     }
     setLoading(true);
     try {
       if (!supabase) throw new Error('Supabase client not available');
+      
+      const finalEmail = editing.email && editing.email.includes('@')
+        ? editing.email.trim()
+        : `${editing.loginId.trim()}@bytex.com`;
+
       if (editing.id) {
-        await supabase.from('employees').update({
-          name: editing.name, cpf: editing.cpf, phone: editing.phone, email: editing.email,
-          birthdate: editing.birthdate, job_title: editing.jobTitle, role: editing.role,
-          avatar_url: editing.avatarUrl, login_id: editing.loginId, password: editing.password
+        // Edit existing employee
+        const { error: updateErr } = await supabase.from('employees').update({
+          name: editing.name,
+          cpf: editing.cpf,
+          phone: editing.phone,
+          email: finalEmail,
+          birthdate: editing.birthdate,
+          job_title: editing.jobTitle,
+          role: editing.role,
+          avatar_url: editing.avatarUrl,
+          login_id: editing.loginId
         }).eq('id', editing.id);
+        
+        if (updateErr) throw updateErr;
+
+        // If password is set, update it via RPC
+        if (editing.password && editing.password.trim() !== '') {
+          const { error: passErr } = await supabase.rpc('admin_update_employee_password', {
+            p_employee_id: editing.id,
+            p_new_password: editing.password.trim()
+          });
+          if (passErr) throw passErr;
+        }
       } else {
-        await supabase.from('employees').insert({
-          name: editing.name, cpf: editing.cpf, phone: editing.phone, email: editing.email,
-          birthdate: editing.birthdate, job_title: editing.jobTitle, role: editing.role || 'funcionario',
-          avatar_url: editing.avatarUrl, login_id: editing.loginId, password: editing.password
+        // Create new employee via RPC (this will insert to auth.users and public.employees)
+        const { data: newId, error: createErr } = await supabase.rpc('admin_create_employee', {
+          p_email: finalEmail,
+          p_password: editing.password.trim(),
+          p_name: editing.name,
+          p_role: editing.role || 'funcionario',
+          p_job_title: editing.jobTitle || '',
+          p_cpf: editing.cpf || '',
+          p_phone: editing.phone || '',
+          p_birthdate: editing.birthdate || '',
+          p_avatar_url: editing.avatarUrl || ''
         });
+
+        if (createErr) throw createErr;
       }
       onRefresh();
       setEditing(null);
     } catch (e: any) {
-      alert(e.message);
+      alert(e.message || 'Erro ao salvar funcionário.');
     }
     setLoading(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Excluir funcionário?')) return;
+    if (!window.confirm('Excluir funcionário? O acesso será revogado permanentemente.')) return;
     setLoading(true);
-    if (supabase) {
-      await supabase.from('employees').delete().eq('id', id);
+    try {
+      if (!supabase) throw new Error('Supabase client not available');
+      const { error } = await supabase.rpc('admin_delete_employee', { p_employee_id: id });
+      if (error) throw error;
       onRefresh();
+    } catch (e: any) {
+      alert(e.message || 'Erro ao excluir funcionário.');
     }
     setLoading(false);
   };
@@ -91,7 +128,18 @@ export const EmployeeManagementModal = ({ employees, onlineEmployees, onClose, o
                   </select>
                 </div>
                 <div><label className="text-xs text-slate-500">ID de Login *</label><input type="text" value={editing.loginId || ''} onChange={e => setEditing({ ...editing, loginId: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
-                <div><label className="text-xs text-slate-500">Senha *</label><input type="text" value={editing.password || ''} onChange={e => setEditing({ ...editing, password: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
+                <div>
+                  <label className="text-xs text-slate-500">
+                    {editing.id ? 'Senha (Deixe em branco para manter a atual)' : 'Senha *'}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={editing.password || ''} 
+                    onChange={e => setEditing({ ...editing, password: e.target.value })} 
+                    placeholder={editing.id ? '••••••••' : 'Senha de acesso'}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" 
+                  />
+                </div>
                 <div><label className="text-xs text-slate-500">Avatar URL</label><input type="text" value={editing.avatarUrl || ''} onChange={e => setEditing({ ...editing, avatarUrl: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 placeholder:text-slate-400" placeholder="https://..." /></div>
                 <div><label className="text-xs text-slate-500">Email</label><input type="email" value={editing.email || ''} onChange={e => setEditing({ ...editing, email: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
                 <div><label className="text-xs text-slate-500">Telefone</label><input type="text" value={editing.phone || ''} onChange={e => setEditing({ ...editing, phone: e.target.value })} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1" /></div>
