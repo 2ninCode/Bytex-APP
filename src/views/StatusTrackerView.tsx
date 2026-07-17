@@ -90,7 +90,7 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-12 pb-24">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         
         {/* Header */}
         <header className="flex flex-col items-center text-center py-4 space-y-4">
@@ -104,32 +104,34 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
         </header>
 
         {!order ? (
-          <Card className="p-8 space-y-6 text-slate-900 dark:text-slate-100 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
-            <div className="text-center space-y-2">
-              <h2 className="text-xl font-black tracking-tight">Consulte seu Aparelho</h2>
-              <p className="text-xs text-slate-500 font-medium leading-relaxed">Insira o código localizador (ex: OS-XXXXXX) enviado pelo técnico.</p>
-            </div>
-            <div className="space-y-3">
-              <input 
-                type="text" 
-                value={searchId} 
-                onChange={e => setSearchId(e.target.value)}
-                placeholder="Ex: OS-542194"
-                className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl h-14 px-4 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-mono font-bold text-center text-lg uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal placeholder:font-medium"
-              />
-              <Button onClick={() => fetchOrder(searchId)} disabled={loading} className="w-full h-14 rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-primary/20">
-                {loading ? <RefreshCw className="animate-spin size-5" /> : "Rastrear Aparelho"}
-              </Button>
-            </div>
-            {error && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 p-3.5 rounded-xl text-red-500 text-xs font-bold text-center">
-                {error}
-              </motion.div>
-            )}
-            <button onClick={onBack} className="w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors pt-2">
-              Voltar ao painel
-            </button>
-          </Card>
+          <div className="max-w-2xl mx-auto">
+            <Card className="p-8 space-y-6 text-slate-900 dark:text-slate-100 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-black tracking-tight">Consulte seu Aparelho</h2>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">Insira o código localizador (ex: OS-XXXXXX) enviado pelo técnico.</p>
+              </div>
+              <div className="space-y-3">
+                <input 
+                  type="text" 
+                  value={searchId} 
+                  onChange={e => setSearchId(e.target.value)}
+                  placeholder="Ex: OS-542194"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl h-14 px-4 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-mono font-bold text-center text-lg uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal placeholder:font-medium"
+                />
+                <Button onClick={() => fetchOrder(searchId)} disabled={loading} className="w-full h-14 rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                  {loading ? <RefreshCw className="animate-spin size-5" /> : "Rastrear Aparelho"}
+                </Button>
+              </div>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 p-3.5 rounded-xl text-red-500 text-xs font-bold text-center">
+                  {error}
+                </motion.div>
+              )}
+              <button onClick={onBack} className="w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors pt-2">
+                Voltar ao painel
+              </button>
+            </Card>
+          </div>
         ) : (
           <div className="space-y-6 text-slate-900 dark:text-slate-100">
             
@@ -145,57 +147,61 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
               </button>
             </div>
 
-            {/* Progresso Card */}
-            <Card className="p-6 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
-              <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Localizador OS</p>
-                  <p className="text-2xl font-black text-primary font-mono">#{order.id}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrada</p>
-                  <p className="font-bold text-base">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 px-1">
-                {steps.map((step, i, arr) => {
-                  const isActive = step.status === 'active';
-                  const isDone = step.status === 'done';
-
-                  return (
-                    <div key={i} className="flex gap-6 relative">
-                      <div className="flex flex-col items-center">
-                        <div className={cn(
-                          "z-10 flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all duration-300",
-                          isDone ? 'bg-primary border-primary text-white shadow-md shadow-primary/20' :
-                            isActive ? 'bg-white dark:bg-slate-900 border-primary text-primary scale-105 shadow-md' :
-                              'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-300'
-                        )}>
-                          {isDone ? <Check className="size-5" /> :
-                            isActive ? <RefreshCw className="size-5 animate-spin" /> :
-                              <div className="size-2 rounded-full bg-current" />}
-                        </div>
-                        {i < arr.length - 1 && (
-                          <div className={cn("w-0.5 h-10 my-1 transition-colors duration-300", isDone ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-800')}></div>
-                        )}
-                      </div>
-                      <div className="pb-6 pt-1 flex-1 min-w-0">
-                        <p className={cn("text-base font-black tracking-tight",
-                          isActive ? 'text-primary' : isDone ? 'text-slate-800 dark:text-white' : 'text-slate-400'
-                        )}>{step.label}</p>
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">
-                          {isDone ? 'Concluído' : isActive ? 'Fase Atual' : 'Aguardando'}
-                        </p>
-                      </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+              {/* Progresso Card (Coluna Esquerda) */}
+              <div className="lg:col-span-5 xl:col-span-4 sticky top-6">
+                <Card className="p-6 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Localizador OS</p>
+                      <p className="text-2xl font-black text-primary font-mono">#{order.id}</p>
                     </div>
-                  );
-                })}
-              </div>
-            </Card>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrada</p>
+                      <p className="font-bold text-base">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                  </div>
 
-            {/* Informações do Aparelho */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2 px-1">
+                    {steps.map((step, i, arr) => {
+                      const isActive = step.status === 'active';
+                      const isDone = step.status === 'done';
+
+                      return (
+                        <div key={i} className="flex gap-6 relative">
+                          <div className="flex flex-col items-center">
+                            <div className={cn(
+                              "z-10 flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all duration-300 shrink-0",
+                              isDone ? 'bg-primary border-primary text-white shadow-md shadow-primary/20' :
+                                isActive ? 'bg-white dark:bg-slate-900 border-primary text-primary scale-105 shadow-md' :
+                                  'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-300'
+                            )}>
+                              {isDone ? <Check className="size-5" /> :
+                                isActive ? <RefreshCw className="size-5 animate-spin" /> :
+                                  <div className="size-2 rounded-full bg-current" />}
+                            </div>
+                            {i < arr.length - 1 && (
+                              <div className={cn("w-0.5 h-10 my-1 transition-colors duration-300", isDone ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-800')}></div>
+                            )}
+                          </div>
+                          <div className="pb-6 pt-1 flex-1 min-w-0">
+                            <p className={cn("text-base font-black tracking-tight",
+                              isActive ? 'text-primary' : isDone ? 'text-slate-800 dark:text-white' : 'text-slate-400'
+                            )}>{step.label}</p>
+                            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">
+                              {isDone ? 'Concluído' : isActive ? 'Fase Atual' : 'Aguardando'}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              </div>
+
+              {/* Informações e Detalhes (Coluna Direita) */}
+              <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="p-5 flex items-start gap-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                   <Smartphone className="size-6" />
@@ -314,6 +320,8 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
                 Tem alguma dúvida ou precisa aprovar o orçamento?<br/>
                 Entre em contato com nossa equipe.
               </p>
+            </div>
+              </div>
             </div>
             
           </div>
