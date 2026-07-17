@@ -25,7 +25,7 @@ export const SettingsView = ({
   currentUser: Employee, employees: Employee[], onlineEmployees: string[], onRefreshEmployees: () => void, onSendNotification: (n: Notification) => void,
   onLogout: () => void, darkMode: boolean, onToggleDark: () => void,
   soundEnabled: boolean, onToggleSound: () => void, orders: Order[],
-  lowStockThreshold: number, onChangeLowStock: (v: number) => void,
+  lowStockThreshold: number, onChangeLowStock: (v: number) => void | Promise<void>,
   servicePrices: ServicePrice[], onSavePrice: (id: string, price: number, field?: 'price' | 'price_gamer') => void,
   onRefreshPrices: () => void,
   onOpenNotifications?: () => void,
@@ -39,10 +39,18 @@ export const SettingsView = ({
   const [showNotifModal, setShowNotifModal] = useState(false);
   const [showServiceMgmt, setShowServiceMgmt] = useState(false);
   const [localLowStock, setLocalLowStock] = useState(lowStockThreshold.toString());
+  const [savingStock, setSavingStock] = useState(false);
 
-  const handleSaveStockThreshold = () => {
+  // Sincroniza o valor local quando o banco atualiza
+  React.useEffect(() => {
+    setLocalLowStock(lowStockThreshold.toString());
+  }, [lowStockThreshold]);
+
+  const handleSaveStockThreshold = async () => {
     const val = parseInt(localLowStock) || 0;
-    onChangeLowStock(val);
+    setSavingStock(true);
+    await onChangeLowStock(val);
+    setSavingStock(false);
   };
 
   const sections = [
@@ -207,8 +215,8 @@ export const SettingsView = ({
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">unid.</span>
                       </div>
                     </div>
-                    <Button onClick={handleSaveStockThreshold} className="w-full bg-amber-500 hover:bg-amber-600 shadow-amber-200/50" size="sm">
-                      Salvar Alerta
+                    <Button onClick={handleSaveStockThreshold} disabled={savingStock} className="w-full bg-amber-500 hover:bg-amber-600 shadow-amber-200/50" size="sm">
+                      {savingStock ? 'Salvando...' : 'Salvar para Todos'}
                     </Button>
                   </div>
                 )}

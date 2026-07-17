@@ -1,12 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { RefreshCw, Box, ArrowLeft, Smartphone, CheckCircle2 } from 'lucide-react';
+import {
+  RefreshCw, Box, ArrowLeft, Smartphone, CheckCircle2, Eye, Play, Check,
+  Laptop, Cpu, HardDrive, Zap, Monitor, Thermometer, Battery, Shield,
+  ExternalLink, ImageIcon, AlertCircle
+} from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { cn } from '../components/ui/utils';
-import { Order, OrderStatus } from '../types';
+import { Order, OrderStatus, Checklist } from '../types';
 import { supabase } from '../lib/supabase';
-import { BytexIcon } from '../components/ui/BytexIcon';
+
+const CHECKLIST_COMPONENTS: { key: keyof Checklist; label: string; icon: any }[] = [
+  { key: 'ram',         label: 'RAM',         icon: HardDrive },
+  { key: 'hd',          label: 'Armazenamento', icon: HardDrive },
+  { key: 'cpu',         label: 'Processador', icon: Cpu },
+  { key: 'gpu',         label: 'Vídeo',       icon: Zap },
+  { key: 'motherboard', label: 'Placa Mãe',   icon: Shield },
+  { key: 'psu',         label: 'Fonte',       icon: Zap },
+  { key: 'display',     label: 'Tela',        icon: Monitor },
+  { key: 'cooling',     label: 'Cooling',     icon: Thermometer },
+  { key: 'battery',     label: 'Bateria',     icon: Battery },
+];
 
 export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBack: () => void }) => {
   const [searchId, setSearchId] = useState(orderId || '');
@@ -19,7 +34,7 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
     setLoading(true);
     setError('');
     try {
-      if (!supabase) throw new Error('Conexão perdida');
+      if (!supabase) throw new Error('Conexão perdida com o banco de dados');
       const { data, error: dbErr } = await supabase
         .from('orders')
         .select('*')
@@ -28,9 +43,9 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
 
       if (dbErr) {
         if (dbErr.code === 'PGRST116') {
-          setError('Ordem não encontrada. Verique o código enviado pelo técnico.');
+          setError('Ordem não encontrada. Verifique o código e tente novamente.');
         } else {
-          setError(`Erro de acesso: Verifique as políticas de RLS.`);
+          setError(`Erro de acesso: ${dbErr.message}`);
         }
         setOrder(null);
       } else {
@@ -42,6 +57,11 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
           device: data.device,
           serialNumber: data.serial_number || '',
           problem: data.problem || '',
+          observationClient: data.observation_client || '', // Observação do cliente (pública)
+          // Laudo técnico excluído intencionalmente para privacidade
+          mediaUrls: data.media_urls || [],
+          budgetItems: data.budget_items || [],
+          checklist: data.checklist || {},
           value: data.value,
           status: data.status as OrderStatus,
           createdAt: data.created_at
@@ -64,93 +84,108 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
     { label: "Orçamento", status: order.status === 'budget' ? 'active' : 'done' },
     { label: "Aprovação", status: order.status === 'approval' ? 'active' : (['in_progress', 'ready', 'finished'].includes(order.status) ? 'done' : 'pending') },
     { label: "Manutenção", status: order.status === 'in_progress' ? 'active' : (['ready', 'finished'].includes(order.status) ? 'done' : 'pending') },
-    { label: "Fase Final", status: order.status === 'ready' ? 'active' : (order.status === 'finished' ? 'done' : 'pending') },
-    { label: "Finalizado", status: order.status === 'finished' ? 'active' : 'pending' },
+    { label: "Pronto", status: order.status === 'ready' ? 'active' : (order.status === 'finished' ? 'done' : 'pending') },
+    { label: "Entregue", status: order.status === 'finished' ? 'active' : 'pending' },
   ] : [];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-background-dark p-6 md:p-12">
-      <div className="max-w-2xl mx-auto space-y-12">
-        <header className="flex flex-col items-center text-center space-y-6">
-          <div className="size-20 bg-primary/10 rounded-3xl flex items-center justify-center p-4 shadow-inner">
-            <BytexIcon className="size-full" />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 md:p-12 pb-24">
+      <div className="max-w-2xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <header className="flex flex-col items-center text-center py-4 space-y-4">
+          <div className="size-16 bg-primary/10 rounded-2xl flex items-center justify-center p-2 shadow-inner">
+            <img src="/pwa-192x192.png" alt="Bytex Logo" className="size-full object-contain" />
           </div>
           <div>
-            <h1 className="text-4xl font-black tracking-tight">Bytex</h1>
-            <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[10px] mt-2">Rastreamento Inteligente</p>
+            <h1 className="text-3xl font-black tracking-tighter">Bytex</h1>
+            <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[9px] mt-1">Acompanhamento de Serviço</p>
           </div>
         </header>
 
         {!order ? (
-          <Card className="p-10 space-y-8 text-slate-900 dark:text-slate-100 rounded-[2.5rem] shadow-2xl border-none">
-            <div className="text-center space-y-3">
-              <h2 className="text-2xl font-black tracking-tight">Consulte seu aparelho</h2>
-              <p className="text-sm text-slate-500 font-medium">Insira o código da OS fornecido pela assistência.</p>
+          <Card className="p-8 space-y-6 text-slate-900 dark:text-slate-100 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
+            <div className="text-center space-y-2">
+              <h2 className="text-xl font-black tracking-tight">Consulte seu Aparelho</h2>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">Insira o código localizador (ex: OS-XXXXXX) enviado pelo técnico.</p>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3">
               <input 
                 type="text" 
                 value={searchId} 
                 onChange={e => setSearchId(e.target.value)}
-                placeholder="Ex: OS-123456"
-                className="w-full bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-800 rounded-2xl h-16 px-6 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold text-center text-xl uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal placeholder:font-medium placeholder:text-slate-400"
+                placeholder="Ex: OS-542194"
+                className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl h-14 px-4 outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-mono font-bold text-center text-lg uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal placeholder:font-medium"
               />
-              <Button onClick={() => fetchOrder(searchId)} disabled={loading} className="w-full h-16 rounded-2xl text-sm font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-                {loading ? <RefreshCw className="animate-spin size-6" /> : "Localizar Ordem"}
+              <Button onClick={() => fetchOrder(searchId)} disabled={loading} className="w-full h-14 rounded-xl text-sm font-black uppercase tracking-widest shadow-lg shadow-primary/20">
+                {loading ? <RefreshCw className="animate-spin size-5" /> : "Rastrear Aparelho"}
               </Button>
             </div>
             {error && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 p-4 rounded-xl text-red-500 text-xs font-bold text-center">
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 p-3.5 rounded-xl text-red-500 text-xs font-bold text-center">
                 {error}
               </motion.div>
             )}
+            <button onClick={onBack} className="w-full text-center text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors pt-2">
+              Voltar ao painel
+            </button>
           </Card>
         ) : (
-          <div className="space-y-8 text-slate-900 dark:text-slate-100">
-            <Button variant="ghost" onClick={() => setOrder(null)} className="text-slate-400 font-bold hover:text-slate-600 active:scale-95 transition-all">
-              <ArrowLeft className="size-4 mr-2" /> Voltar
-            </Button>
+          <div className="space-y-6 text-slate-900 dark:text-slate-100">
+            
+            <div className="flex justify-between items-center px-1">
+              <Button variant="ghost" onClick={() => setOrder(null)} className="text-slate-400 font-bold hover:text-slate-600 active:scale-95 transition-all">
+                <ArrowLeft className="size-4 mr-2" /> Outra OS
+              </Button>
+              <button 
+                onClick={() => fetchOrder(order.id)} 
+                className="size-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-400 hover:text-primary transition-all"
+              >
+                <RefreshCw className="size-4" />
+              </button>
+            </div>
 
-            <Card className="p-8 rounded-[2.5rem] shadow-2xl border-none">
-              <div className="flex items-center justify-between mb-10 pb-6 border-b border-slate-100 dark:border-slate-800">
+            {/* Progresso Card */}
+            <Card className="p-6 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Código Identificador</p>
-                  <p className="text-3xl font-black text-primary">#{order.id}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Localizador OS</p>
+                  <p className="text-2xl font-black text-primary font-mono">#{order.id}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Entrada</p>
-                  <p className="font-black text-lg">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrada</p>
+                  <p className="font-bold text-base">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
                 </div>
               </div>
 
-              <div className="space-y-2 px-2">
+              <div className="space-y-2 px-1">
                 {steps.map((step, i, arr) => {
                   const isActive = step.status === 'active';
                   const isDone = step.status === 'done';
 
                   return (
-                    <div key={i} className="flex gap-8 relative text-slate-900 dark:text-slate-100">
+                    <div key={i} className="flex gap-6 relative">
                       <div className="flex flex-col items-center">
                         <div className={cn(
-                          "z-10 flex h-12 w-12 items-center justify-center rounded-2xl border-2 transition-all duration-500",
-                          isDone ? 'bg-primary border-primary text-white shadow-lg shadow-primary/30' :
-                            isActive ? 'bg-white dark:bg-slate-900 border-primary text-primary scale-110 shadow-xl shadow-primary/20' :
+                          "z-10 flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all duration-300",
+                          isDone ? 'bg-primary border-primary text-white shadow-md shadow-primary/20' :
+                            isActive ? 'bg-white dark:bg-slate-900 border-primary text-primary scale-105 shadow-md' :
                               'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-300'
                         )}>
-                          {isDone ? <CheckCircle2 className="size-7" /> :
-                            isActive ? <RefreshCw className="size-7 animate-spin" /> :
-                              <div className="size-3 rounded-full bg-current" />}
+                          {isDone ? <Check className="size-5" /> :
+                            isActive ? <RefreshCw className="size-5 animate-spin" /> :
+                              <div className="size-2 rounded-full bg-current" />}
                         </div>
                         {i < arr.length - 1 && (
-                          <div className={cn("w-1 h-12 my-1.5 transition-colors duration-500", isDone ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-800')}></div>
+                          <div className={cn("w-0.5 h-10 my-1 transition-colors duration-300", isDone ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-800')}></div>
                         )}
                       </div>
-                      <div className="pb-8 pt-1">
-                        <p className={cn("text-xl font-black tracking-tight",
-                          isActive ? 'text-primary' : isDone ? 'text-slate-900 dark:text-white' : 'text-slate-400'
+                      <div className="pb-6 pt-1 flex-1 min-w-0">
+                        <p className={cn("text-base font-black tracking-tight",
+                          isActive ? 'text-primary' : isDone ? 'text-slate-800 dark:text-white' : 'text-slate-400'
                         )}>{step.label}</p>
-                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1 opacity-70">
-                          {isDone ? 'Concluído' : isActive ? 'Em andamento' : 'Aguardando'}
+                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">
+                          {isDone ? 'Concluído' : isActive ? 'Fase Atual' : 'Aguardando'}
                         </p>
                       </div>
                     </div>
@@ -159,26 +194,128 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
               </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="p-6 flex items-start gap-5 rounded-[2rem] border-none shadow-xl">
-                <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0"><Smartphone className="size-7" /></div>
+            {/* Informações do Aparelho */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="p-5 flex items-start gap-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <Smartphone className="size-6" />
+                </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Dispositivo</p>
-                  <p className="font-black text-xl leading-snug">{order.device}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Aparelho / Dispositivo</p>
+                  <p className="font-bold text-base leading-snug">{order.device}</p>
+                  {order.serialNumber && <p className="text-[10px] font-mono text-slate-400 mt-0.5">S/N: {order.serialNumber}</p>}
                 </div>
               </Card>
-              <Card className="p-6 flex items-start gap-5 rounded-[2rem] border-none shadow-xl">
-                <div className="size-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center text-emerald-600 shrink-0"><CheckCircle2 className="size-7" /></div>
+              <Card className="p-5 flex items-start gap-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <div className="size-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 shrink-0">
+                  <CheckCircle2 className="size-6" />
+                </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Proprietário</p>
-                  <p className="font-black text-xl leading-snug">{order.customerName}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</p>
+                  <p className="font-bold text-base leading-snug">{order.customerName}</p>
                 </div>
               </Card>
+            </div>
+
+            {/* Observações da Assistência (Público) */}
+            {order.observationClient && (
+              <Card className="p-5 bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl">
+                <div className="flex gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
+                  <Eye className="size-4 shrink-0 mt-0.5" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Informativo da Assistência</span>
+                </div>
+                <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                  {order.observationClient}
+                </p>
+              </Card>
+            )}
+
+            {/* Checklist */}
+            {order.checklist && Object.keys(order.checklist).length > 0 && (
+              <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Checklist de Verificação</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {CHECKLIST_COMPONENTS.map(comp => {
+                    const item = order.checklist?.[comp.key];
+                    if (!item || item.status === 'nao_testado') return null;
+
+                    const isBom = item.status === 'bom';
+                    return (
+                      <div key={comp.key} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <comp.icon className="size-4 text-slate-400 shrink-0" />
+                          <span className="text-xs font-bold truncate">{comp.label}</span>
+                        </div>
+                        <span className={cn('text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg shrink-0', isBom ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' : 'bg-red-50 text-red-500 dark:bg-red-950/40')}>
+                          {isBom ? 'Testado OK' : 'Defeito'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            )}
+
+            {/* Peças e Orçamento */}
+            {order.budgetItems && order.budgetItems.length > 0 && (
+              <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Peças / Orçamento Necessário</p>
+                <div className="space-y-3">
+                  {order.budgetItems.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                      <div className="min-w-0 flex-1 pr-4">
+                        <p className="text-sm font-bold truncate">{item.name}</p>
+                        {item.link && (
+                          <a 
+                            href={item.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-[10px] text-primary flex items-center gap-1 hover:underline mt-0.5"
+                          >
+                            Ver peça <ExternalLink className="size-2.5" />
+                          </a>
+                        )}
+                      </div>
+                      <span className="text-sm font-black text-slate-700 dark:text-slate-200">R$ {item.price.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-xs font-bold text-slate-400">Total das Peças</span>
+                    <span className="font-black text-lg text-primary">R$ {order.budgetItems.reduce((acc, i) => acc + i.price, 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* Mídia (Evidência visual para o cliente) */}
+            {order.mediaUrls && order.mediaUrls.length > 0 && (
+              <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Galeria de Fotos e Vídeos</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {order.mediaUrls.map((m, i) => (
+                    <div key={i} className="aspect-video relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 group">
+                      {m.type === 'image' ? (
+                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                          <img src={m.url} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        </a>
+                      ) : (
+                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="w-full h-full flex items-center justify-center">
+                          <Play className="size-8 text-white opacity-70 group-hover:scale-110 transition-all" />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            <div className="bg-primary/5 dark:bg-primary/5 rounded-[2rem] p-6 text-center border-2 border-dashed border-primary/20">
+              <p className="text-slate-600 dark:text-slate-400 font-bold text-xs leading-relaxed">
+                Tem alguma dúvida ou precisa aprovar o orçamento?<br/>
+                Entre em contato com nossa equipe.
+              </p>
             </div>
             
-            <div className="bg-primary/5 rounded-[2rem] p-8 text-center space-y-2 border-2 border-dashed border-primary/20">
-              <p className="text-slate-600 dark:text-slate-400 font-bold text-sm leading-relaxed">Sua satisfação é nossa prioridade.<br/>Qualquer dúvida, entre em contato.</p>
-            </div>
           </div>
         )}
       </div>

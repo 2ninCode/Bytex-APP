@@ -4,6 +4,38 @@ export type OrderStatus = 'budget' | 'approval' | 'in_progress' | 'ready' | 'fin
 
 export type Role = 'admin' | 'gestor' | 'funcionario';
 
+export type ChecklistStatus = 'bom' | 'ruim' | 'nao_testado';
+
+export interface ChecklistItem {
+  status: ChecklistStatus;
+  note?: string;
+}
+
+export interface Checklist {
+  ram:         ChecklistItem;
+  hd:          ChecklistItem;
+  cpu:         ChecklistItem;
+  gpu:         ChecklistItem;
+  motherboard: ChecklistItem;
+  psu:         ChecklistItem;
+  display:     ChecklistItem;
+  cooling:     ChecklistItem;
+  battery:     ChecklistItem;
+}
+
+export interface BudgetItem {
+  id:    string;
+  name:  string;
+  link:  string;
+  price: number;
+}
+
+export interface MediaFile {
+  url:  string;
+  type: 'image' | 'video';
+  name: string;
+}
+
 export interface Employee {
   id: string;
   loginId: string;
@@ -28,6 +60,16 @@ export interface Customer {
   createdAt: string;
 }
 
+export interface CustomerDevice {
+  id:           string;
+  customerId:   string;
+  name:         string;
+  serialNumber: string;
+  specs:        Record<string, string>;
+  notes:        string;
+  createdAt:    string;
+}
+
 export interface Order {
   id: string;
   customerName: string;
@@ -38,6 +80,15 @@ export interface Order {
   device: string;
   serialNumber: string;
   problem: string;
+  // ── Novos campos V4 ──────────────────────────
+  observationClient?: string;       // Visível ao cliente no link de rastreio
+  technicalReport?: string;         // Privado — apenas funcionários
+  responsibleEmployeeId?: string;   // Técnico responsável
+  deviceId?: string;                // Vínculo com customer_devices
+  mediaUrls?: MediaFile[];          // Fotos e vídeos
+  budgetItems?: BudgetItem[];       // Orçamento com links
+  checklist?: Partial<Checklist>;   // Saúde das peças
+  // ─────────────────────────────────────────────
   value: number;
   status: OrderStatus;
   createdAt: string;

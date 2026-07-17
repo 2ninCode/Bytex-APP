@@ -27,6 +27,7 @@ import { StatusTrackerView } from './views/StatusTrackerView';
 import { OrderFormModal } from './components/modals/OrderFormModal';
 import { NotificationCenterModal } from './components/modals/NotificationCenterModal';
 import { SplashScreen } from './components/ui/SplashScreen';
+import { OfflineBanner } from './components/ui/OfflineBanner';
 
 // Types
 import { View, Employee, Order, OrderStatus, Notification, Role } from './types';
@@ -44,12 +45,12 @@ export default function App() {
     return saved ? saved === 'dark' : true;
   });
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [lowStockThreshold, setLowStockThreshold] = useState(5);
   const lastBackButtonPress = useRef<number>(0);
 
   // Custom Hooks
   const {
-    employees, orders, inventoryItems, servicePrices,
+    employees, orders, inventoryItems, servicePrices, customerDevices,
+    lowStockThreshold,
     setInventoryItems, refreshEmployees, refreshOrders, refreshPrices,
   } = useSupabaseData(currentUser);
 
@@ -80,7 +81,7 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Mount: Routing & Session Restore
+  // Mount: Routing & Session Restore (SEM delay desnecessário)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const trackId = params.get('track');
@@ -128,7 +129,8 @@ export default function App() {
       }
     };
 
-    const timer = setTimeout(() => { checkSession(); }, 2000);
+    // Pequeno delay apenas para a splash ter tempo de renderizar
+    const timer = setTimeout(() => { checkSession(); }, 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -217,23 +219,32 @@ export default function App() {
 
   const handleSaveOrder = async (data: Partial<Order>) => {
     if (!supabase) return;
+    const payload = {
+      customer_name: data.customerName,
+      customer_email: data.customerEmail,
+      customer_phone: data.customerPhone,
+      customer_id: data.customerId,
+      device: data.device,
+      serial_number: data.serialNumber,
+      problem: data.problem,
+      value: data.value,
+      // Novos campos V4
+      responsible_employee_id: data.responsibleEmployeeId || null,
+      device_id: data.deviceId || null,
+      observation_client: data.observationClient || null,
+      technical_report: data.technicalReport || null,
+      media_urls: data.mediaUrls || [],
+      budget_items: data.budgetItems || [],
+      checklist: data.checklist || {},
+    };
+
     if (showOrderModal && (showOrderModal as Order).id) {
       const id = (showOrderModal as Order).id;
-      await supabase.from('orders').update({
-        customer_name: data.customerName, customer_email: data.customerEmail,
-        customer_phone: data.customerPhone, customer_id: data.customerId,
-        device: data.device, serial_number: data.serialNumber,
-        problem: data.problem, value: data.value
-      }).eq('id', id);
+      await supabase.from('orders').update(payload).eq('id', id);
       sendAutomatedNotification('Ordem Atualizada', `A ordem #${id} foi atualizada.`, 'info', null, id);
     } else {
       const newId = `OS-${Math.floor(100000 + Math.random() * 900000)}`;
-      await supabase.from('orders').insert({
-        id: newId, customer_name: data.customerName, customer_email: data.customerEmail,
-        customer_phone: data.customerPhone, customer_id: data.customerId,
-        device: data.device, serial_number: data.serialNumber,
-        problem: data.problem, value: data.value, status: 'budget'
-      });
+      await supabase.from('orders').insert({ id: newId, ...payload, status: 'budget' });
       sendAutomatedNotification('Nova Ordem de Serviço', `Equipamento ${data.device} de ${data.customerName}`, 'info', null, newId);
     }
     setShowOrderModal(false);
@@ -277,6 +288,11 @@ export default function App() {
     refreshPrices();
   };
 
+  const handleSaveLowStockThreshold = async (val: number) => {
+    if (!supabase) return;
+    await supabase.from('settings').upsert({ key: 'low_stock_threshold', value: val, updated_at: new Date().toISOString() });
+  };
+
   const sendNotification = (_n: Notification) => {};
 
   // ── Render ──────────────────────────────────────────────
@@ -290,7 +306,12 @@ export default function App() {
   }
 
   if (!currentUser) {
-    return <LoginView onLogin={handleLogin} />;
+    return (
+      <>
+        <AnimatePresence>{showSplash && <SplashScreen />}</AnimatePresence>
+        {!showSplash && <LoginView onLogin={handleLogin} />}
+      </>
+    );
   }
 
   const menuItems = [
@@ -302,6 +323,7 @@ export default function App() {
 
   return (
     <div className="h-[100dvh] bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100 flex flex-col overflow-hidden w-full relative">
+      <OfflineBanner />
       <AnimatePresence>
         {showSplash && <SplashScreen />}
       </AnimatePresence>
@@ -312,7 +334,9 @@ export default function App() {
           order={showOrderModal === true ? undefined : showOrderModal}
           onSave={handleSaveOrder}
           onCancel={() => setShowOrderModal(false)}
-          currentUserRole={currentUser?.role}
+          currentUser={currentUser}
+          employees={employees}
+          customerDevices={customerDevices}
         />
       )}
 
@@ -382,6 +406,7 @@ export default function App() {
               <OrdersView
                 currentUser={currentUser}
                 orders={orders}
+                employees={employees}
                 selectedOrderId={selectedOrderId}
                 onSelect={(id) => navigateTo('orders', { orderId: id })}
                 onBack={() => navigateTo('orders', { orderId: null })}
@@ -412,7 +437,7 @@ export default function App() {
                 onToggleSound={() => setSoundEnabled(!soundEnabled)}
                 orders={orders}
                 lowStockThreshold={lowStockThreshold}
-                onChangeLowStock={setLowStockThreshold}
+                onChangeLowStock={handleSaveLowStockThreshold}
                 servicePrices={servicePrices}
                 onSavePrice={handleSavePrice}
                 onRefreshPrices={refreshPrices}
