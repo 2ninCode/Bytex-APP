@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Order, Employee, CustomerDevice, Customer, Checklist, ChecklistItem, ChecklistStatus, BudgetItem, MediaFile } from '../../types';
 import { supabase } from '../../lib/supabase';
+import { uploadOrConvertMedia } from '../../lib/mediaStorage';
 import { cn } from '../ui/utils';
 import { Button } from '../ui/Button';
 import { useAI } from '../../hooks/useAI';
@@ -236,26 +237,16 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
 
   // ── Media Upload ─────────────────────────────────────────────
   const handleFileUpload = async (file: File) => {
-    if (!supabase) { alert('Sem conexão com banco.'); return; }
     setUploading(true);
-    const ext = file.name.split('.').pop()?.toLowerCase() || '';
-    const fileName = `${order?.id || 'new'}_${Date.now()}.${ext}`;
-
-    const { data, error } = await supabase.storage
-      .from('os-media')
-      .upload(fileName, file, { upsert: true, contentType: file.type });
-
-    if (error) {
-      console.error('Upload error:', error);
+    try {
+      const mediaItem = await uploadOrConvertMedia(file, order?.id);
+      setMedia(prev => [...prev, mediaItem]);
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      alert(err?.message || 'Erro ao fazer upload da mídia.');
+    } finally {
       setUploading(false);
-      const confirmed = confirm('Erro ao fazer upload. Deseja colar o link manualmente?');
-      return;
     }
-
-    const { data: { publicUrl } } = supabase.storage.from('os-media').getPublicUrl(fileName);
-    const isVideo = ['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext);
-    setMedia(prev => [...prev, { url: publicUrl, type: isVideo ? 'video' : 'image', name: file.name }]);
-    setUploading(false);
   };
 
   const handleAddMediaUrl = () => {

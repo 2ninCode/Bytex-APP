@@ -280,11 +280,51 @@ export default function App() {
 
     if (showOrderModal && (showOrderModal as Order).id) {
       const id = (showOrderModal as Order).id;
-      await supabase.from('orders').update(payload).eq('id', id);
+      const { error } = await supabase.from('orders').update(payload).eq('id', id);
+      if (error) {
+        console.warn('[App] Erro ao atualizar ordem com payload completo:', error);
+        if (error.code === '42703' || error.message?.toLowerCase().includes('column')) {
+          const legacyPayload = {
+            customer_name: data.customerName,
+            customer_email: data.customerEmail,
+            customer_phone: data.customerPhone,
+            customer_id: data.customerId,
+            device: data.device,
+            serial_number: data.serialNumber,
+            problem: data.problem,
+            value: data.value,
+          };
+          const { error: legErr } = await supabase.from('orders').update(legacyPayload).eq('id', id);
+          if (legErr) console.error('[App] Erro no fallback de atualização:', legErr);
+        } else {
+          alert(`Aviso ao atualizar ordem: ${error.message}`);
+        }
+      }
       sendAutomatedNotification('Ordem Atualizada', `A ordem #${id} foi atualizada.`, 'info', null, id);
     } else {
       const newId = `OS-${Math.floor(100000 + Math.random() * 900000)}`;
-      await supabase.from('orders').insert({ id: newId, ...payload, status: 'budget' });
+      const { error } = await supabase.from('orders').insert({ id: newId, ...payload, status: 'budget' });
+      if (error) {
+        console.warn('[App] Erro ao inserir nova ordem com payload completo:', error);
+        if (error.code === '42703' || error.message?.toLowerCase().includes('column')) {
+          const legacyPayload = {
+            id: newId,
+            customer_name: data.customerName,
+            customer_email: data.customerEmail,
+            customer_phone: data.customerPhone,
+            customer_id: data.customerId,
+            device: data.device,
+            serial_number: data.serialNumber,
+            problem: data.problem,
+            value: data.value,
+            status: 'budget'
+          };
+          const { error: legErr } = await supabase.from('orders').insert(legacyPayload);
+          if (legErr) console.error('[App] Erro no fallback de inserção:', legErr);
+        } else {
+          alert(`Aviso ao criar nova ordem: ${error.message}`);
+        }
+      }
       sendAutomatedNotification('Nova Ordem de Serviço', `Equipamento ${data.device} de ${data.customerName}`, 'info', null, newId);
     }
     setShowOrderModal(false);

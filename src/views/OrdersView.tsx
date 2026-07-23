@@ -3,7 +3,8 @@ import {
   Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check,
   RefreshCw, Box, User, ArrowUpRight, Trash2, Smartphone, DollarSign,
   AlertCircle, MoreVertical, Eye, EyeOff, CheckCircle2, Shield, Cpu,
-  HardDrive, Zap, Monitor, Thermometer, Battery, Play, AlertTriangle
+  HardDrive, Zap, Monitor, Thermometer, Battery, Play, AlertTriangle,
+  Copy, ExternalLink
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -53,6 +54,17 @@ export const OrdersView = ({
   const [showMobileActions, setShowMobileActions] = React.useState(false);
   const [viewCustomerId, setViewCustomerId] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = React.useState<string | null>(null);
+
+  const handleCopyTrackingLink = (id: string) => {
+    const link = `${window.location.origin}${window.location.pathname}?track=${id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedLinkId(id);
+      setTimeout(() => setCopiedLinkId(null), 2000);
+    }).catch(err => {
+      console.error('Falha ao copiar link: ', err);
+    });
+  };
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId);
 
@@ -210,9 +222,31 @@ export const OrdersView = ({
           
           <div className="flex items-center gap-1 md:gap-2 shrink-0">
             <div className="hidden md:flex items-center gap-2">
-              <button onClick={() => onTrack(selectedOrder.id)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Rastrear">
-                 <ArrowUpRight className="w-4 h-4 md:w-5 md:h-5" />
-                 <span className="text-[10px] font-bold uppercase tracking-wider">Rastrear</span>
+              <button 
+                onClick={() => {
+                  const link = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
+                  window.open(link, '_blank');
+                }} 
+                className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" 
+                title="Abrir Rastreio em Nova Aba"
+              >
+                 <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
+                 <span className="text-[10px] font-bold uppercase tracking-wider">Aba de Rastreio</span>
+              </button>
+              <button 
+                onClick={() => handleCopyTrackingLink(selectedOrder.id)} 
+                className={cn(
+                  "p-2 rounded-xl transition-all active:scale-95 flex items-center gap-2 border",
+                  copiedLinkId === selectedOrder.id 
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/30" 
+                    : "bg-primary/5 text-primary hover:bg-primary/10 border-transparent"
+                )}
+                title="Copiar Link de Rastreio"
+              >
+                 {copiedLinkId === selectedOrder.id ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <Copy className="w-4 h-4 md:w-5 md:h-5" />}
+                 <span className="text-[10px] font-bold uppercase tracking-wider">
+                   {copiedLinkId === selectedOrder.id ? "Copiado!" : "Copiar Link"}
+                 </span>
               </button>
               {currentUser.role !== 'funcionario' && (
                 <>
@@ -238,8 +272,24 @@ export const OrdersView = ({
                  <>
                     <div className="fixed inset-0 z-20" onClick={() => setShowMobileActions(false)} />
                     <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-30 flex flex-col gap-1 px-2">
-                      <button onClick={() => { setShowMobileActions(false); onTrack(selectedOrder.id); }} className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3">
-                         <ArrowUpRight className="w-4 h-4 text-primary" /> Rastrear Público
+                      <button 
+                        onClick={() => { 
+                          setShowMobileActions(false); 
+                          const link = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
+                          window.open(link, '_blank');
+                        }} 
+                        className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3"
+                      >
+                         <ExternalLink className="w-4 h-4 text-primary" /> Rastrear (Nova Aba)
+                      </button>
+                      <button 
+                        onClick={() => { 
+                          setShowMobileActions(false); 
+                          handleCopyTrackingLink(selectedOrder.id);
+                        }} 
+                        className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3"
+                      >
+                         <Copy className="w-4 h-4 text-primary" /> Copiar Link
                       </button>
                       {currentUser.role !== 'funcionario' && (
                         <>
@@ -478,13 +528,10 @@ export const OrdersView = ({
                   <Card key={i} className="overflow-hidden aspect-video relative group border border-slate-100 dark:border-slate-800">
                     {m.type === 'image' ? (
                       <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                        <img src={m.url} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <img src={m.url} alt={m.name || `Mídia ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       </a>
                     ) : (
-                      <a href={m.url} target="_blank" rel="noopener noreferrer" className="w-full h-full bg-slate-900 flex items-center justify-center relative">
-                        <Play className="size-10 text-white opacity-70 group-hover:scale-110 transition-transform" />
-                        <span className="absolute bottom-2 left-2 text-[9px] font-black uppercase tracking-wider text-white bg-black/60 px-2 py-0.5 rounded">Vídeo</span>
-                      </a>
+                      <video src={m.url} controls className="w-full h-full object-cover rounded-xl bg-black" />
                     )}
                   </Card>
                 ))}

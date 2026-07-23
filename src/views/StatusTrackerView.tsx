@@ -103,7 +103,15 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
           </div>
         </header>
 
-        {!order ? (
+        {loading && orderId && !order ? (
+          <div className="max-w-md mx-auto py-16 text-center space-y-4">
+            <div className="relative inline-flex">
+              <RefreshCw className="animate-spin size-10 text-primary" />
+              <div className="absolute inset-0 size-10 bg-primary/10 blur-md rounded-full -z-10 animate-pulse" />
+            </div>
+            <p className="text-sm font-bold text-slate-500 animate-pulse">Carregando relatório de serviço...</p>
+          </div>
+        ) : !order ? (
           <div className="max-w-2xl mx-auto">
             <Card className="p-8 space-y-6 text-slate-900 dark:text-slate-100 rounded-[2rem] shadow-xl border border-slate-100 dark:border-slate-800">
               <div className="text-center space-y-2">
@@ -271,16 +279,6 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
                     <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                       <div className="min-w-0 flex-1 pr-4">
                         <p className="text-sm font-bold truncate">{item.name}</p>
-                        {item.link && (
-                          <a 
-                            href={item.link} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-[10px] text-primary flex items-center gap-1 hover:underline mt-0.5"
-                          >
-                            Ver peça <ExternalLink className="size-2.5" />
-                          </a>
-                        )}
                       </div>
                       <span className="text-sm font-black text-slate-700 dark:text-slate-200">R$ {item.price.toFixed(2)}</span>
                     </div>
@@ -297,17 +295,15 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
             {order.mediaUrls && order.mediaUrls.length > 0 && (
               <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Galeria de Fotos e Vídeos</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {order.mediaUrls.map((m, i) => (
                     <div key={i} className="aspect-video relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 group">
                       {m.type === 'image' ? (
                         <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                          <img src={m.url} alt={m.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img src={m.url} alt={m.name || `Foto ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </a>
                       ) : (
-                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="w-full h-full flex items-center justify-center">
-                          <Play className="size-8 text-white opacity-70 group-hover:scale-110 transition-all" />
-                        </a>
+                        <video src={m.url} controls className="w-full h-full object-cover rounded-xl bg-black" />
                       )}
                     </div>
                   ))}
