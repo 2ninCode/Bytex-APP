@@ -10,7 +10,7 @@ import { Button } from '../components/ui/Button';
 import { cn } from '../components/ui/utils';
 import { Order, OrderStatus, Checklist } from '../types';
 import { supabase } from '../lib/supabase';
-import { CHECKLIST_COMPONENTS } from '../components/modals/OrderFormModal';
+import { CHECKLIST_HARDWARE, CHECKLIST_SOFTWARE, CHECKLIST_COMPONENTS } from '../components/modals/OrderFormModal';
 
 export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBack: () => void }) => {
   const [searchId, setSearchId] = useState(orderId || '');
@@ -198,114 +198,125 @@ export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBac
 
               {/* Informações e Detalhes (Coluna Direita) */}
               <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="p-5 flex items-start gap-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="size-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <Smartphone className="size-6" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Aparelho / Dispositivo</p>
-                  <p className="font-bold text-base leading-snug">{order.device}</p>
-                  {order.serialNumber && <p className="text-[10px] font-mono text-slate-400 mt-0.5">S/N: {order.serialNumber}</p>}
-                </div>
-              </Card>
-              <Card className="p-5 flex items-start gap-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <div className="size-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 shrink-0">
-                  <CheckCircle2 className="size-6" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</p>
-                  <p className="font-bold text-base leading-snug">{order.customerName}</p>
-                </div>
-              </Card>
-            </div>
-
-            {/* Observações da Assistência (Público) */}
-            {order.observationClient && (
-              <Card className="p-5 bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl">
-                <div className="flex gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
-                  <Eye className="size-4 shrink-0 mt-0.5" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Informativo da Assistência</span>
-                </div>
-                <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
-                  {order.observationClient}
-                </p>
-              </Card>
-            )}
-
-            {/* Checklist */}
-            {order.checklist && Object.keys(order.checklist).length > 0 && (
-              <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Checklist de Verificação</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {CHECKLIST_COMPONENTS.map(comp => {
-                    const item = order.checklist?.[comp.key];
-                    if (!item || item.status === 'nao_testado') return null;
-
-                    const isBom = item.status === 'bom';
-                    return (
-                      <div key={comp.key} className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <comp.icon className="size-4 text-slate-400 shrink-0" />
-                          <span className="text-xs font-bold truncate">{comp.label}</span>
-                        </div>
-                        <span className={cn('text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg shrink-0', isBom ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' : 'bg-red-50 text-red-500 dark:bg-red-950/40')}>
-                          {isBom ? 'Testado OK' : 'Defeito'}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            )}
-
-            {/* Peças e Orçamento */}
-            {order.budgetItems && order.budgetItems.length > 0 && (
-              <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Peças / Orçamento Necessário</p>
-                <div className="space-y-3">
-                  {order.budgetItems.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                      <div className="min-w-0 flex-1 pr-4">
-                        <p className="text-sm font-bold truncate">{item.name}</p>
-                      </div>
-                      <span className="text-sm font-black text-slate-700 dark:text-slate-200">R$ {item.price.toFixed(2)}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <span className="text-xs font-bold text-slate-400">Total das Peças</span>
-                    <span className="font-black text-lg text-primary">R$ {order.budgetItems.reduce((acc, i) => acc + i.price, 0).toFixed(2)}</span>
+                
+                {/* CARD OBRIGATÓRIO: ESPECIFICAÇÕES DO COMPUTADOR */}
+                <Card className="p-5 border-2 border-primary/20 bg-white dark:bg-slate-900 shadow-md space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                      <Laptop className="size-4" /> Configuração do Computador
+                    </h4>
+                    <span className="text-[10px] font-mono text-slate-400">S/N: {order.serialNumber || 'N/A'}</span>
                   </div>
-                </div>
-              </Card>
-            )}
 
-            {/* Mídia (Evidência visual para o cliente) */}
-            {order.mediaUrls && order.mediaUrls.length > 0 && (
-              <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Galeria de Fotos e Vídeos</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {order.mediaUrls.map((m, i) => (
-                    <div key={i} className="aspect-video relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 group">
-                      {m.type === 'image' ? (
-                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                          <img src={m.url} alt={m.name || `Foto ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        </a>
-                      ) : (
-                        <video src={m.url} controls className="w-full h-full object-cover rounded-xl bg-black" />
-                      )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                      <span className="font-bold text-slate-400 flex items-center gap-1.5"><Laptop className="size-3.5" /> Equipamento</span>
+                      <span className="font-black text-slate-800 dark:text-slate-100">{order.device}</span>
                     </div>
-                  ))}
-                </div>
-              </Card>
-            )}
+                    <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                      <span className="font-bold text-slate-400 flex items-center gap-1.5"><CheckCircle2 className="size-3.5 text-emerald-500" /> Cliente</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200">{order.customerName}</span>
+                    </div>
+                  </div>
+                </Card>
 
-            <div className="bg-primary/5 dark:bg-primary/5 rounded-[2rem] p-6 text-center border-2 border-dashed border-primary/20">
-              <p className="text-slate-600 dark:text-slate-400 font-bold text-xs leading-relaxed">
-                Tem alguma dúvida ou precisa aprovar o orçamento?<br/>
-                Entre em contato com nossa equipe.
-              </p>
-            </div>
+                {/* Grid Lado a Lado para Detalhes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                  {/* Lado Esquerdo: Informativo & Orçamento */}
+                  <div className="space-y-6">
+                    {/* Observações da Assistência (Público) */}
+                    {order.observationClient && (
+                      <Card className="p-5 bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl">
+                        <div className="flex gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
+                          <Eye className="size-4 shrink-0 mt-0.5" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Informativo da Assistência</span>
+                        </div>
+                        <p className="text-xs font-medium leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                          {order.observationClient}
+                        </p>
+                      </Card>
+                    )}
+
+                    {/* Peças e Orçamento */}
+                    {order.budgetItems && order.budgetItems.length > 0 && (
+                      <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Peças / Orçamento Necessário</p>
+                        <div className="space-y-3">
+                          {order.budgetItems.map(item => (
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                              <div className="min-w-0 flex-1 pr-4">
+                                <p className="text-xs font-bold truncate">{item.name}</p>
+                              </div>
+                              <span className="text-xs font-black text-slate-700 dark:text-slate-200">R$ {item.price.toFixed(2)}</span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <span className="text-xs font-bold text-slate-400">Total das Peças</span>
+                            <span className="font-black text-base text-primary">R$ {order.budgetItems.reduce((acc, i) => acc + i.price, 0).toFixed(2)}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+                  </div>
+
+                  {/* Lado Direito: Checklist & Mídias */}
+                  <div className="space-y-6">
+                    {/* Checklist */}
+                    {order.checklist && Object.keys(order.checklist).length > 0 && (
+                      <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Checklist de Verificação</p>
+                        <div className="grid grid-cols-1 gap-2">
+                          {CHECKLIST_COMPONENTS.map(comp => {
+                            const item = order.checklist?.[comp.key];
+                            if (!item || item.status === 'nao_testado') return null;
+
+                            const isBom = item.status === 'bom';
+                            return (
+                              <div key={comp.key} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <comp.icon className="size-3.5 text-slate-400 shrink-0" />
+                                  <span className="text-xs font-bold truncate">{comp.label}</span>
+                                </div>
+                                <span className={cn('text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg shrink-0', isBom ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' : 'bg-red-50 text-red-500 dark:bg-red-950/40')}>
+                                  {isBom ? 'Testado OK' : 'Defeito'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Mídia (Evidência visual para o cliente) */}
+                    {order.mediaUrls && order.mediaUrls.length > 0 && (
+                      <Card className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4">Galeria de Fotos e Vídeos</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {order.mediaUrls.map((m, i) => (
+                            <div key={i} className="aspect-video relative rounded-xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 group">
+                              {m.type === 'image' ? (
+                                <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                                  <img src={m.url} alt={m.name || `Foto ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                </a>
+                              ) : (
+                                <video src={m.url} controls className="w-full h-full object-cover rounded-xl bg-black" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+                  </div>
+
+                </div>
+
+                <div className="bg-primary/5 dark:bg-primary/5 rounded-[2rem] p-6 text-center border-2 border-dashed border-primary/20">
+                  <p className="text-slate-600 dark:text-slate-400 font-bold text-xs leading-relaxed">
+                    Tem alguma dúvida ou precisa aprovar o orçamento?<br/>
+                    Entre em contato com nossa equipe.
+                  </p>
+                </div>
               </div>
             </div>
             

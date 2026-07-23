@@ -488,6 +488,7 @@ export default function App() {
                 currentUser={currentUser}
                 orders={orders}
                 employees={employees}
+                customerDevices={customerDevices}
                 selectedOrderId={selectedOrderId}
                 onSelect={(id) => navigateTo('orders', { orderId: id })}
                 onBack={() => navigateTo('orders', { orderId: null })}

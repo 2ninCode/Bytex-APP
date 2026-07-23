@@ -4,21 +4,121 @@ import {
   RefreshCw, Box, User, ArrowUpRight, Trash2, Smartphone, DollarSign,
   AlertCircle, MoreVertical, Eye, EyeOff, CheckCircle2, Shield, Cpu,
   HardDrive, Zap, Monitor, Thermometer, Battery, Play, AlertTriangle,
-  Copy, ExternalLink, Sparkles, Save, Lock
+  Copy, ExternalLink, Sparkles, Save, Lock, Terminal, Wifi, Volume2, Disc, Activity, Upload
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { cn } from '../components/ui/utils';
-import { Order, OrderStatus, Employee, Checklist } from '../types';
+import { Order, OrderStatus, Employee, Checklist, CustomerDevice, ChecklistStatus, BudgetItem, MediaFile } from '../types';
 import { CustomerDetailsModal } from '../components/modals/CustomerDetailsModal';
 import { CHECKLIST_HARDWARE, CHECKLIST_SOFTWARE, CHECKLIST_COMPONENTS } from '../components/modals/OrderFormModal';
+import { uploadOrConvertMedia } from '../lib/mediaStorage';
 import { supabase } from '../lib/supabase';
+
+// ── COMPONENTES AUXILIARES LIVE-EDIT (CLICK-TO-EDIT) ────────────────
+
+const InlineText = ({
+  value,
+  onSave,
+  placeholder = 'Clique para editar...',
+  className = '',
+  inputClassName = ''
+}: {
+  value: string;
+  onSave: (val: string) => void;
+  placeholder?: string;
+  className?: string;
+  inputClassName?: string;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [temp, setTemp] = useState(value);
+
+  useEffect(() => { setTemp(value); }, [value]);
+
+  const handleBlur = () => {
+    setEditing(false);
+    if (temp !== value) onSave(temp);
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={temp}
+        onChange={e => setTemp(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={e => { if (e.key === 'Enter') handleBlur(); }}
+        className={cn("bg-white dark:bg-slate-800 border-2 border-primary rounded-lg px-2 py-1 text-xs outline-none shadow-sm font-bold", inputClassName)}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={() => setEditing(true)}
+      className={cn("cursor-pointer hover:bg-primary/10 hover:text-primary transition-all px-1.5 py-0.5 rounded border border-dashed border-slate-200 dark:border-slate-700 hover:border-primary/50", className)}
+      title="Clique diretamente para editar"
+    >
+      {value || <span className="italic text-slate-400">{placeholder}</span>}
+    </span>
+  );
+};
+
+const InlineTextarea = ({
+  value,
+  onSave,
+  placeholder = 'Clique para digitar laudo ou observação...',
+  className = ''
+}: {
+  value: string;
+  onSave: (val: string) => void;
+  placeholder?: string;
+  className?: string;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [temp, setTemp] = useState(value);
+
+  useEffect(() => { setTemp(value); }, [value]);
+
+  const handleBlur = () => {
+    setEditing(false);
+    if (temp !== value) onSave(temp);
+  };
+
+  if (editing) {
+    return (
+      <textarea
+        autoFocus
+        rows={4}
+        value={temp}
+        onChange={e => setTemp(e.target.value)}
+        onBlur={handleBlur}
+        className="w-full bg-white dark:bg-slate-800 border-2 border-primary rounded-xl p-3 text-xs outline-none shadow-sm font-medium leading-relaxed"
+      />
+    );
+  }
+
+  return (
+    <div
+      onClick={() => setEditing(true)}
+      className={cn("cursor-pointer hover:bg-primary/5 transition-all p-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 hover:border-primary/40 min-h-[5rem]", className)}
+      title="Clique diretamente para editar o texto"
+    >
+      {value ? (
+        <p className="whitespace-pre-wrap text-xs font-medium leading-relaxed">{value}</p>
+      ) : (
+        <p className="italic text-slate-400 text-xs">{placeholder}</p>
+      )}
+    </div>
+  );
+};
 
 export const OrdersView = ({
   currentUser,
   orders,
   employees,
+  customerDevices = [],
   selectedOrderId,
   onSelect,
   onBack,
@@ -31,6 +131,7 @@ export const OrdersView = ({
   currentUser: Employee,
   orders: Order[],
   employees: Employee[],
+  customerDevices?: CustomerDevice[],
   selectedOrderId: string | null,
   onSelect: (id: string) => void,
   onBack: () => void,
@@ -40,40 +141,25 @@ export const OrdersView = ({
   onDelete: (id: string) => void,
   onTrack: (id: string) => void
 }) => {
-  const [deleteId, setDeleteId] = React.useState<string | null>(null);
-  const [showMobileActions, setShowMobileActions] = React.useState(false);
-  const [viewCustomerId, setViewCustomerId] = React.useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [copiedLinkId, setCopiedLinkId] = React.useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showMobileActions, setShowMobileActions] = useState(false);
+  const [viewCustomerId, setViewCustomerId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'checklist' | 'budget' | 'media' | 'report'>('overview');
+  const [uploading, setUploading] = useState(false);
 
-  // Quick Inline Edit State
-  const [isQuickEditing, setIsQuickEditing] = React.useState(false);
-  const [quickForm, setQuickForm] = React.useState({
-    device: '',
-    serialNumber: '',
-    value: '',
-    observationClient: '',
-    technicalReport: '',
-    responsibleEmployeeId: ''
-  });
+  // Form para nova peça
+  const [newBudgetItem, setNewBudgetItem] = useState({ name: '', link: '', price: '' });
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId);
+  const linkedDevice = customerDevices.find(d => d.id === selectedOrder?.deviceId || d.name === selectedOrder?.device);
 
-  // Sincroniza formulário rápido ao selecionar uma OS
-  React.useEffect(() => {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
     setErrorMessage(null);
-    if (selectedOrder) {
-      setQuickForm({
-        device: selectedOrder.device || '',
-        serialNumber: selectedOrder.serialNumber || '',
-        value: String(selectedOrder.value || 0),
-        observationClient: selectedOrder.observationClient || '',
-        technicalReport: selectedOrder.technicalReport || '',
-        responsibleEmployeeId: selectedOrder.responsibleEmployeeId || ''
-      });
-      setIsQuickEditing(false);
-    }
-  }, [selectedOrderId, selectedOrder]);
+  }, [selectedOrderId]);
 
   const handleCopyTrackingLink = (id: string) => {
     const link = `${window.location.origin}${window.location.pathname}?track=${id}`;
@@ -85,23 +171,90 @@ export const OrdersView = ({
     });
   };
 
-  const handleSaveQuickEdit = async () => {
+  // Live Update de qualquer campo da Ordem de Serviço
+  const handleUpdateOrderField = async (field: string, val: any) => {
     if (!selectedOrder || !supabase) return;
-    const payload = {
-      device: quickForm.device,
-      serial_number: quickForm.serialNumber,
-      value: parseFloat(quickForm.value) || 0,
-      observation_client: quickForm.observationClient || null,
-      technical_report: quickForm.technicalReport || null,
-      responsible_employee_id: quickForm.responsibleEmployeeId || null,
+    const { error } = await supabase.from('orders').update({ [field]: val }).eq('id', selectedOrder.id);
+    if (error) {
+      console.error('Erro ao atualizar campo:', error);
+      alert(`Aviso ao atualizar: ${error.message}`);
+    } else {
+      onUpdateStatus(selectedOrder.id, selectedOrder.status);
+    }
+  };
+
+  // Live Update das especificações do PC (customer_devices)
+  const handleUpdateDeviceSpec = async (specKey: string, val: string) => {
+    if (!selectedOrder || !supabase) return;
+    const devId = selectedOrder.deviceId || linkedDevice?.id;
+    if (!devId) return;
+
+    const currentSpecs = linkedDevice?.specs || {};
+    const newSpecs = { ...currentSpecs, [specKey]: val };
+
+    await supabase.from('customer_devices').update({ specs: newSpecs }).eq('id', devId);
+    onUpdateStatus(selectedOrder.id, selectedOrder.status);
+  };
+
+  // Alternar Status do Checklist com 1 Clique
+  const handleToggleChecklist = async (compKey: keyof Checklist) => {
+    if (!selectedOrder || !supabase) return;
+
+    const currentChecklist = selectedOrder.checklist || {};
+    const currentItem = currentChecklist[compKey] || { status: 'nao_testado' as ChecklistStatus, note: '' };
+
+    let nextStatus: ChecklistStatus = 'bom';
+    if (currentItem.status === 'bom') nextStatus = 'ruim';
+    else if (currentItem.status === 'ruim') nextStatus = 'nao_testado';
+    else nextStatus = 'bom';
+
+    const newChecklist = {
+      ...currentChecklist,
+      [compKey]: { ...currentItem, status: nextStatus }
     };
 
-    const { error } = await supabase.from('orders').update(payload).eq('id', selectedOrder.id);
-    if (error) {
-      alert(`Erro ao salvar edição rápida: ${error.message}`);
-    } else {
-      setIsQuickEditing(false);
+    await supabase.from('orders').update({ checklist: newChecklist }).eq('id', selectedOrder.id);
+    onUpdateStatus(selectedOrder.id, selectedOrder.status);
+  };
+
+  // Adicionar Peça ao Orçamento diretamente
+  const handleAddBudgetItemInline = async () => {
+    if (!selectedOrder || !newBudgetItem.name.trim() || !supabase) return;
+
+    const item: BudgetItem = {
+      id: Math.random().toString(36).substring(2),
+      name: newBudgetItem.name.trim(),
+      link: newBudgetItem.link.trim(),
+      price: parseFloat(newBudgetItem.price) || 0
+    };
+
+    const updatedBudget = [...(selectedOrder.budgetItems || []), item];
+    await supabase.from('orders').update({ budget_items: updatedBudget }).eq('id', selectedOrder.id);
+    setNewBudgetItem({ name: '', link: '', price: '' });
+    onUpdateStatus(selectedOrder.id, selectedOrder.status);
+  };
+
+  // Remover Peça do Orçamento
+  const handleRemoveBudgetItemInline = async (itemId: string) => {
+    if (!selectedOrder || !supabase) return;
+    const updatedBudget = (selectedOrder.budgetItems || []).filter(i => i.id !== itemId);
+    await supabase.from('orders').update({ budget_items: updatedBudget }).eq('id', selectedOrder.id);
+    onUpdateStatus(selectedOrder.id, selectedOrder.status);
+  };
+
+  // Upload Mídia direto
+  const handleDirectFileUpload = async (file: File) => {
+    if (!selectedOrder) return;
+    setUploading(true);
+    try {
+      const mediaItem = await uploadOrConvertMedia(file, selectedOrder.id);
+      const updatedMedia = [...(selectedOrder.mediaUrls || []), mediaItem];
+      await supabase.from('orders').update({ media_urls: updatedMedia }).eq('id', selectedOrder.id);
       onUpdateStatus(selectedOrder.id, selectedOrder.status);
+    } catch (err: any) {
+      alert(err.message || 'Erro no upload.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -130,57 +283,37 @@ export const OrdersView = ({
                 </div>
               </Card>
             ) : (
-              orders.map((order) => {
-                // Se finalizado e não é admin/gestor, pode ocultar ou não. Mostramos todas para facilitar.
-                const isFinished = order.status === 'finished';
-                return (
-                  <Card
-                    key={order.id}
-                    className={cn(
-                      "p-5 flex items-center gap-5 hover:border-primary/40 transition-all cursor-pointer group active:scale-[0.99]",
-                      isFinished && "opacity-75"
-                    )}
-                    onClick={() => onSelect(order.id)}
-                  >
-                    <div 
-                      className={cn(
-                        "size-14 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all active:scale-95 group/icon",
-                        isFinished ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary",
-                        order.customerId ? "cursor-pointer hover:bg-primary hover:text-white" : ""
-                      )}
-                      onClick={(e) => {
-                        if (order.customerId) {
-                          e.stopPropagation();
-                          setViewCustomerId(order.customerId);
-                        }
-                      }}
-                    >
-                      {order.customerId ? <User className="w-7 h-7" /> : <Laptop className="w-7 h-7" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="font-bold text-base truncate">{order.customerName}</h3>
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-black tracking-widest leading-none">#{order.id}</span>
+              orders.map((o) => (
+                <Card
+                  key={o.id}
+                  onClick={() => onSelect(o.id)}
+                  className="p-5 cursor-pointer hover:border-primary/50 transition-all group border border-slate-100 dark:border-slate-800"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black shrink-0">
+                        <Laptop className="w-6 h-6" />
                       </div>
-                      <p className="text-xs text-slate-500 font-medium truncate">{order.device} • {order.problem}</p>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs font-black text-primary">#{o.id}</span>
+                          <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{o.customerName}</span>
+                        </div>
+                        <p className="text-sm font-black text-slate-800 dark:text-white truncate">{o.device}</p>
+                        <p className="text-xs text-slate-400 truncate mt-0.5">{o.problem}</p>
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-extrabold text-sm mb-0.5">R$ {order.value.toFixed(0)}</p>
-                      <span className={cn(
-                        "text-[10px] font-black uppercase tracking-tighter leading-none",
-                        isFinished ? "text-emerald-500" :
-                          order.status === 'in_progress' ? "text-primary" : "text-amber-500"
-                      )}>
-                        {order.status === 'budget' ? 'Orçamento' :
-                          order.status === 'approval' ? 'Aprovação' :
-                            order.status === 'in_progress' ? 'Em Reparo' :
-                              order.status === 'ready' ? 'Pronto' : 'Entregue'}
-                      </span>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right hidden sm:block">
+                        <p className="font-black text-base text-emerald-600 dark:text-emerald-400">R$ {o.value.toFixed(2)}</p>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">{o.status}</span>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-primary transition-colors" />
                     </div>
-                    <ChevronRight className="text-slate-300 group-hover:text-primary transition-colors w-6 h-6" />
-                  </Card>
-                );
-              })
+                  </div>
+                </Card>
+              ))
             )}
           </div>
         </div>
@@ -188,186 +321,179 @@ export const OrdersView = ({
     );
   }
 
-  // ── Bloqueio de Fase por Checklist ──────────────────────────────
-  const badChecklistItems = Object.entries(selectedOrder.checklist || {})
-    .filter(([_, item]) => item?.status === 'ruim')
-    .map(([key]) => CHECKLIST_COMPONENTS.find(c => c.key === key)?.label || key);
+  const statusOptions: { value: OrderStatus; label: string; icon: any }[] = [
+    { value: 'budget', label: 'Orçamento', icon: ClipboardList },
+    { value: 'approval', label: 'Aprovação', icon: Eye },
+    { value: 'in_progress', label: 'Em Reparo', icon: RefreshCw },
+    { value: 'ready', label: 'Pronto', icon: CheckCircle2 },
+    { value: 'finished', label: 'Finalizado', icon: Check },
+  ];
 
-  const hasRuimChecklist = badChecklistItems.length > 0;
+  const steps = statusOptions.map((opt, i) => {
+    const currentIndex = statusOptions.findIndex((s) => s.value === selectedOrder.status);
+    let status: 'done' | 'active' | 'pending' = 'pending';
+    if (i < currentIndex) status = 'done';
+    else if (i === currentIndex) status = 'active';
+    return { ...opt, status };
+  });
+
+  const responsibleTech = employees.find((e) => e.id === selectedOrder.responsibleEmployeeId);
+
+  const hasRuimChecklist = selectedOrder.checklist
+    ? Object.values(selectedOrder.checklist).some((c) => c?.status === 'ruim')
+    : false;
+
+  const badChecklistItems = selectedOrder.checklist
+    ? Object.entries(selectedOrder.checklist)
+        .filter(([_, c]) => c?.status === 'ruim')
+        .map(([k, _]) => CHECKLIST_COMPONENTS.find((c) => c.key === k)?.label || k)
+    : [];
 
   const handleStatusChangeClick = (newStatus: OrderStatus) => {
-    // Se for mudar para Pronto (ready) ou Entregue (finished) e tiver algum item "Ruim", bloqueia
-    if (['ready', 'finished'].includes(newStatus) && hasRuimChecklist) {
-      setErrorMessage(`Não é possível finalizar a OS ou marcá-la como Pronto. Componente(s) com defeito no checklist: ${badChecklistItems.join(', ')}. Resolva os problemas no checklist antes de continuar.`);
+    const currentIndex = statusOptions.findIndex((s) => s.value === selectedOrder.status);
+    const targetIndex = statusOptions.findIndex((s) => s.value === newStatus);
+
+    if (hasRuimChecklist && targetIndex > currentIndex) {
+      setErrorMessage(
+        `A ordem está travada! Existem peças com problema no checklist (${badChecklistItems.join(
+          ', '
+        )}). Corrija o checklist antes de avançar a OS.`
+      );
       return;
     }
     setErrorMessage(null);
     onUpdateStatus(selectedOrder.id, newStatus);
   };
 
-  const steps: { label: string, status: 'done' | 'active' | 'pending' }[] = [
-    { label: 'Orçamento', status: selectedOrder.status === 'budget' ? 'active' : 'done' },
-    { label: 'Aprovação', status: selectedOrder.status === 'approval' ? 'active' : (['in_progress', 'ready', 'finished'].includes(selectedOrder.status) ? 'done' : 'pending') },
-    { label: 'Reparo', status: selectedOrder.status === 'in_progress' ? 'active' : (['ready', 'finished'].includes(selectedOrder.status) ? 'done' : 'pending') },
-    { label: 'Pronto', status: selectedOrder.status === 'ready' ? 'active' : (selectedOrder.status === 'finished' ? 'done' : 'pending') },
-    { label: 'Entregue', status: selectedOrder.status === 'finished' ? 'done' : 'pending' }
-  ];
-
-  const statusOptions: { label: string, value: OrderStatus, icon: any, color: string }[] = [
-    { label: 'Orçamento', value: 'budget', icon: ClipboardList, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    { label: 'Aprovação', value: 'approval', icon: Box, color: 'text-orange-600 bg-orange-50 border-orange-200' },
-    { label: 'Em Reparo', value: 'in_progress', icon: Laptop, color: 'text-primary bg-primary/5 border-primary/20' },
-    { label: 'Pronto', value: 'ready', icon: Check, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    { label: 'Entregue', value: 'finished', icon: Box, color: 'text-slate-600 bg-slate-50 border-slate-200' },
-  ];
-
-  const responsibleTech = employees.find(e => e.id === selectedOrder.responsibleEmployeeId);
+  const deviceSpecs = linkedDevice?.specs || {};
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
-      {/* Detail Header - Pinned */}
-      <div className="p-3 pt-safe border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-950 z-20 shadow-sm relative">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
-            <button onClick={onBack} className="p-2 shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all active:scale-90">
-              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
+      {/* Top Bar Header */}
+      <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={onBack}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-500"
+            >
+              <ArrowLeft className="w-5 h-5" />
             </button>
-            
-            <div className="flex items-center gap-2 md:gap-3 min-w-0">
-              <div className="size-8 md:size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 shadow-inner">
-                <Laptop className="w-4 h-4 md:w-5 md:h-5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black tracking-widest bg-primary text-white px-2 py-0.5 rounded uppercase">#{selectedOrder.id}</span>
+                <InlineText
+                  value={selectedOrder.customerName}
+                  onSave={(v) => handleUpdateOrderField('customer_name', v)}
+                  className="font-black text-sm md:text-base text-slate-800 dark:text-white"
+                />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 
-                    className="text-sm md:text-base font-black text-slate-800 dark:text-white truncate max-w-[120px] md:max-w-xs cursor-pointer hover:text-primary transition-colors"
-                    onClick={() => selectedOrder.customerId && setViewCustomerId(selectedOrder.customerId)}
-                  >
-                    {selectedOrder.customerName}
-                  </h3>
-                  <span className="text-[9px] md:text-[10px] font-black tracking-widest bg-primary text-white px-1.5 py-0.5 rounded uppercase">#{selectedOrder.id}</span>
-                </div>
-                <p className="text-[10px] md:text-xs text-slate-500 font-bold uppercase tracking-wider truncate">{selectedOrder.device}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <InlineText
+                  value={selectedOrder.device}
+                  onSave={(v) => handleUpdateOrderField('device', v)}
+                  placeholder="Nome do Aparelho..."
+                  className="text-xs font-bold text-slate-500 uppercase"
+                />
+                <span className="text-slate-300">•</span>
+                <InlineText
+                  value={selectedOrder.serialNumber}
+                  onSave={(v) => handleUpdateOrderField('serial_number', v)}
+                  placeholder="S/N..."
+                  className="text-[10px] font-mono text-slate-400"
+                />
               </div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-1 md:gap-2 shrink-0">
-            <div className="hidden md:flex items-center gap-2">
-              <button 
-                onClick={() => setIsQuickEditing(!isQuickEditing)}
-                className={cn(
-                  "p-2 rounded-xl transition-all active:scale-95 flex items-center gap-2 border font-bold text-[10px] uppercase tracking-wider",
-                  isQuickEditing 
-                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
-                    : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:border-amber-900/40"
-                )}
-                title="Edição Rápida na Tela"
-              >
-                <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
-                <span>Edição Rápida</span>
-              </button>
-              <button 
-                onClick={() => {
-                  const link = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
-                  window.open(link, '_blank');
-                }} 
-                className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" 
-                title="Abrir Rastreio em Nova Aba"
-              >
-                 <ExternalLink className="w-4 h-4 md:w-5 md:h-5" />
-                 <span className="text-[10px] font-bold uppercase tracking-wider">Aba de Rastreio</span>
-              </button>
-              <button 
-                onClick={() => handleCopyTrackingLink(selectedOrder.id)} 
-                className={cn(
-                  "p-2 rounded-xl transition-all active:scale-95 flex items-center gap-2 border",
-                  copiedLinkId === selectedOrder.id 
-                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-900/30" 
-                    : "bg-primary/5 text-primary hover:bg-primary/10 border-transparent"
-                )}
-                title="Copiar Link de Rastreio"
-              >
-                 {copiedLinkId === selectedOrder.id ? <Check className="w-4 h-4 md:w-5 md:h-5" /> : <Copy className="w-4 h-4 md:w-5 md:h-5" />}
-                 <span className="text-[10px] font-bold uppercase tracking-wider">
-                   {copiedLinkId === selectedOrder.id ? "Copiado!" : "Copiar Link"}
-                 </span>
-              </button>
-              {currentUser.role !== 'funcionario' && (
-                <>
-                  <button onClick={() => onEdit(selectedOrder)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Editar Completo">
-                    <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Editar Form</span>
-                  </button>
-                  <button onClick={() => setDeleteId(selectedOrder.id)} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Remover">
-                    <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Excluir</span>
-                  </button>
-                </>
-              )}
-            </div>
 
-            {/* Mobile Actions */}
-            <div className="md:hidden relative">
-               <button onClick={() => setShowMobileActions(!showMobileActions)} className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 text-slate-500 rounded-xl transition-all active:scale-95 relative z-30">
-                 <MoreVertical className="w-5 h-5" />
-               </button>
-               
-               {showMobileActions && (
-                 <>
-                    <div className="fixed inset-0 z-20" onClick={() => setShowMobileActions(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-30 flex flex-col gap-1 px-2">
-                      <button 
-                        onClick={() => { 
-                          setShowMobileActions(false); 
-                          setIsQuickEditing(!isQuickEditing);
-                        }} 
-                        className="w-full text-left px-3 py-2 text-sm font-bold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-xl flex items-center gap-3"
-                      >
-                         <Sparkles className="w-4 h-4 text-amber-500" /> Edição Rápida
-                      </button>
-                      <button 
-                        onClick={() => { 
-                          setShowMobileActions(false); 
-                          const link = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
-                          window.open(link, '_blank');
-                        }} 
-                        className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3"
-                      >
-                         <ExternalLink className="w-4 h-4 text-primary" /> Rastrear (Nova Aba)
-                      </button>
-                      <button 
-                        onClick={() => { 
-                          setShowMobileActions(false); 
-                          handleCopyTrackingLink(selectedOrder.id);
-                        }} 
-                        className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3"
-                      >
-                         <Copy className="w-4 h-4 text-primary" /> Copiar Link
-                      </button>
-                      {currentUser.role !== 'funcionario' && (
-                        <>
-                          <button onClick={() => { setShowMobileActions(false); onEdit(selectedOrder); }} className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3">
-                             <Edit2 className="w-4 h-4 text-primary" /> Editar Completo
-                          </button>
-                          <hr className="border-slate-100 dark:border-slate-700 my-1 mx-2" />
-                          <button onClick={() => { setShowMobileActions(false); setDeleteId(selectedOrder.id); }} className="w-full text-left px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl flex items-center gap-3">
-                             <Trash2 className="w-4 h-4" /> Excluir
-                          </button>
-                        </>
-                      )}
-                    </div>
-                 </>
-               )}
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                const link = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
+                window.open(link, '_blank');
+              }}
+              className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-1.5"
+              title="Testar Link em Nova Aba"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">Rastreio Cliente</span>
+            </button>
+            <button
+              onClick={() => handleCopyTrackingLink(selectedOrder.id)}
+              className={cn(
+                "p-2 rounded-xl transition-all active:scale-95 flex items-center gap-1.5 border",
+                copiedLinkId === selectedOrder.id
+                  ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                  : "bg-primary/5 text-primary border-transparent"
+              )}
+            >
+              {copiedLinkId === selectedOrder.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">
+                {copiedLinkId === selectedOrder.id ? "Copiado!" : "Copiar Link"}
+              </span>
+            </button>
+            {currentUser.role !== 'funcionario' && (
+              <button onClick={() => setDeleteId(selectedOrder.id)} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all" title="Excluir">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* NAVEGAÇÃO DE ABAS ULTRA-LIMPA */}
+        <div className="max-w-7xl mx-auto flex items-center gap-2 mt-4 pt-2 border-t border-slate-100 dark:border-slate-800/60 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0",
+              activeTab === 'overview' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            <Laptop className="size-4" /> Visão Geral & PC
+          </button>
+          <button
+            onClick={() => setActiveTab('checklist')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0",
+              activeTab === 'checklist' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            <CheckCircle2 className="size-4" /> Checklist ({Object.keys(selectedOrder.checklist || {}).length})
+          </button>
+          <button
+            onClick={() => setActiveTab('budget')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0",
+              activeTab === 'budget' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            <Box className="size-4" /> Orçamento ({selectedOrder.budgetItems?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('media')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0",
+              activeTab === 'media' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            <Upload className="size-4" /> Mídias ({selectedOrder.mediaUrls?.length || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab('report')}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0",
+              activeTab === 'report' ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
+            <Lock className="size-4" /> Laudo & Rastreio
+          </button>
         </div>
       </div>
 
+      {/* Conteúdo das Abas */}
       <div className="flex-1 overflow-y-auto scroll-smooth">
-        <div className="p-4 max-w-5xl mx-auto space-y-6 pb-32">
-          
-          {/* Alertas / Mensagens de Bloqueio */}
+        <div className="p-4 max-w-7xl mx-auto space-y-6 pb-32">
+
           {errorMessage && (
             <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800/40 rounded-2xl p-4 flex gap-3 text-red-600 dark:text-red-400">
               <AlertTriangle className="size-5 shrink-0 mt-0.5" />
@@ -375,321 +501,353 @@ export const OrdersView = ({
             </div>
           )}
 
-          {/* Painel de Edição Rápida Inline */}
-          {isQuickEditing && (
-            <Card className="p-5 border-2 border-amber-400/60 bg-amber-50/30 dark:bg-amber-950/10 rounded-2xl space-y-4">
-              <div className="flex items-center justify-between border-b border-amber-200 dark:border-amber-900/40 pb-3">
-                <h4 className="text-xs font-black uppercase tracking-widest text-amber-600 flex items-center gap-2">
-                  <Sparkles className="size-4" /> Edição Rápida Direta da OS #{selectedOrder.id}
-                </h4>
-                <button onClick={() => setIsQuickEditing(false)} className="text-slate-400 hover:text-slate-600 p-1">
-                  <X className="size-4" />
-                </button>
-              </div>
+          {/* ABA 1: VISÃO GERAL & CONFIGURAÇÃO DO COMPUTADOR */}
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Aparelho / Equipamento</label>
-                  <input
-                    value={quickForm.device}
-                    onChange={e => setQuickForm(f => ({ ...f, device: e.target.value }))}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold outline-none focus:border-primary"
-                  />
+              {/* CARD ESPECIFICAÇÕES LIVE-EDIT */}
+              <Card className="p-6 space-y-4 border-2 border-primary/20 bg-white dark:bg-slate-900 shadow-md">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Laptop className="size-4" /> Configuração do Computador (Clique no texto para editar)
+                  </h4>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Número de Série (S/N)</label>
-                  <input
-                    value={quickForm.serialNumber}
-                    onChange={e => setQuickForm(f => ({ ...f, serialNumber: e.target.value }))}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono outline-none focus:border-primary"
-                  />
+
+                <div className="space-y-3 text-xs">
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-50 dark:border-slate-800/50">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Laptop className="size-3.5" /> Equipamento</span>
+                    <InlineText
+                      value={selectedOrder.device}
+                      onSave={(v) => handleUpdateOrderField('device', v)}
+                      className="font-black text-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-50 dark:border-slate-800/50">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Cpu className="size-3.5 text-blue-500" /> Processador (CPU)</span>
+                    <InlineText
+                      value={deviceSpecs.cpu || ''}
+                      onSave={(v) => handleUpdateDeviceSpec('cpu', v)}
+                      placeholder="Sem CPU informada"
+                      className="font-bold text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-50 dark:border-slate-800/50">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><HardDrive className="size-3.5 text-emerald-500" /> Memória RAM</span>
+                    <InlineText
+                      value={deviceSpecs.ram || ''}
+                      onSave={(v) => handleUpdateDeviceSpec('ram', v)}
+                      placeholder="Sem RAM informada"
+                      className="font-bold text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-50 dark:border-slate-800/50">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Zap className="size-3.5 text-purple-500" /> Placa de Vídeo (GPU)</span>
+                    <InlineText
+                      value={deviceSpecs.gpu || ''}
+                      onSave={(v) => handleUpdateDeviceSpec('gpu', v)}
+                      placeholder="Vídeo Integrado"
+                      className="font-bold text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-50 dark:border-slate-800/50">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><HardDrive className="size-3.5 text-amber-500" /> Armazenamento</span>
+                    <InlineText
+                      value={deviceSpecs.storage || ''}
+                      onSave={(v) => handleUpdateDeviceSpec('storage', v)}
+                      placeholder="Sem SSD/HD informado"
+                      className="font-bold text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5 border-b border-slate-50 dark:border-slate-800/50">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Shield className="size-3.5 text-indigo-500" /> Placa Mãe</span>
+                    <InlineText
+                      value={deviceSpecs.motherboard || ''}
+                      onSave={(v) => handleUpdateDeviceSpec('motherboard', v)}
+                      placeholder="Sem Placa Mãe informada"
+                      className="font-bold text-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Terminal className="size-3.5" /> Número de Série (S/N)</span>
+                    <InlineText
+                      value={selectedOrder.serialNumber || ''}
+                      onSave={(v) => handleUpdateOrderField('serial_number', v)}
+                      placeholder="Sem S/N"
+                      className="font-mono font-bold text-slate-800 dark:text-slate-100"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Valor do Serviço (R$)</label>
-                  <input
-                    type="number"
-                    value={quickForm.value}
-                    onChange={e => setQuickForm(f => ({ ...f, value: e.target.value }))}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-black text-emerald-600 outline-none focus:border-primary"
-                  />
+              </Card>
+
+              {/* CARD CLIENTE & ATENDIMENTO */}
+              <Card className="p-6 space-y-4 border border-slate-100 dark:border-slate-800">
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Atendimento & Valores</h4>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-slate-400">Cliente</p>
+                      <InlineText
+                        value={selectedOrder.customerName}
+                        onSave={(v) => handleUpdateOrderField('customer_name', v)}
+                        className="font-bold text-sm"
+                      />
+                    </div>
+                    {selectedOrder.customerId && (
+                      <button onClick={() => setViewCustomerId(selectedOrder.customerId!)} className="text-[10px] font-black text-primary uppercase">Ver Perfil</button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-slate-400">Técnico Responsável</p>
+                      <select
+                        value={selectedOrder.responsibleEmployeeId || ''}
+                        onChange={(e) => handleUpdateOrderField('responsible_employee_id', e.target.value || null)}
+                        className="bg-transparent text-xs font-bold outline-none text-slate-700 dark:text-slate-200"
+                      >
+                        <option value="">Selecione um técnico...</option>
+                        {employees.map(emp => (
+                          <option key={emp.id} value={emp.id}>{emp.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-emerald-500 text-white rounded-2xl flex items-center justify-between shadow-lg">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wider opacity-80">Valor Total do Serviço</p>
+                      <div className="flex items-center text-2xl font-black">
+                        <span>R$&nbsp;</span>
+                        <InlineText
+                          value={String(selectedOrder.value)}
+                          onSave={(v) => handleUpdateOrderField('value', parseFloat(v) || 0)}
+                          className="font-black text-white hover:bg-white/20"
+                        />
+                      </div>
+                    </div>
+                    <DollarSign className="size-8 opacity-40" />
+                  </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Técnico Responsável</label>
-                  <select
-                    value={quickForm.responsibleEmployeeId}
-                    onChange={e => setQuickForm(f => ({ ...f, responsibleEmployeeId: e.target.value }))}
-                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold outline-none focus:border-primary"
-                  >
-                    <option value="">Não designado</option>
-                    {employees.map(emp => (
-                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.jobTitle})</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              </Card>
 
-              <div>
-                <label className="text-[10px] font-black uppercase text-emerald-600 block mb-1 flex items-center gap-1">
-                  <Eye className="size-3" /> Observação para o Cliente (Pública no rastreio)
-                </label>
-                <textarea
-                  rows={2}
-                  value={quickForm.observationClient}
-                  onChange={e => setQuickForm(f => ({ ...f, observationClient: e.target.value }))}
-                  placeholder="Informações que o cliente poderá ler no link..."
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 block mb-1 flex items-center gap-1">
-                  <Lock className="size-3" /> Laudo Técnico Interno (Privado)
-                </label>
-                <textarea
-                  rows={2}
-                  value={quickForm.technicalReport}
-                  onChange={e => setQuickForm(f => ({ ...f, technicalReport: e.target.value }))}
-                  placeholder="Apenas para equipe de técnicos..."
-                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-900/30">
-                <Button variant="secondary" size="sm" onClick={() => setIsQuickEditing(false)}>Cancelar</Button>
-                <Button size="sm" onClick={handleSaveQuickEdit} className="bg-primary text-white">
-                  <Save className="size-4 mr-1" /> Salvar Alterações Agora
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {hasRuimChecklist && (
-            <div className="bg-amber-50 dark:bg-amber-900/10 border-2 border-amber-200 dark:border-amber-900/30 rounded-2xl p-4 flex gap-3 text-amber-700 dark:text-amber-400">
-              <AlertCircle className="size-5 shrink-0 mt-0.5" />
-              <div className="text-sm font-bold leading-relaxed">
-                Atenção: A OS está travada para avanço operacional de finalização pois existem peças com falha no checklist ({badChecklistItems.join(', ')}).
-              </div>
             </div>
           )}
 
-          {/* Timeline */}
-          <section className="space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Progresso do Serviço</h4>
-            <Card className="p-5 overflow-x-auto">
-              <div className="flex items-center justify-between relative min-w-[320px] py-2">
-                <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 dark:bg-slate-800 -translate-y-1/2 z-0" />
-                {steps.map((step, i) => (
-                  <div key={i} className="relative z-10 flex flex-col items-center gap-2">
-                    <div className={cn(
-                      "size-8 rounded-full border-2 flex items-center justify-center transition-all duration-500",
-                      step.status === 'done' ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/30" :
-                      step.status === 'active' ? "bg-white border-primary text-primary animate-pulse shadow-md" :
-                      "bg-white border-slate-100 text-slate-300 dark:bg-slate-900 dark:border-slate-800"
-                    )}>
-                      {step.status === 'done' ? <Check className="w-4 h-4" /> : <span className="text-[10px] font-black">{i + 1}</span>}
-                    </div>
-                    <span className={cn("text-[9px] font-black uppercase tracking-wider whitespace-nowrap",
-                      step.status === 'pending' ? "text-slate-300" : "text-slate-600 dark:text-slate-400"
-                    )}>{step.label}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </section>
-
-          {/* Grid layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
-            {/* Informações Gerais */}
-            <section className="space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Informações Básicas</h4>
-              <Card className="divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
-                <div 
-                  className={cn(
-                    "p-4 flex items-center gap-4",
-                    selectedOrder.customerId ? "cursor-pointer hover:bg-primary/[0.02] transition-colors" : ""
-                  )}
-                  onClick={() => selectedOrder.customerId && setViewCustomerId(selectedOrder.customerId)}
-                >
-                  <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cliente</p>
-                    <p className="font-bold">{selectedOrder.customerName}</p>
-                  </div>
-                  {selectedOrder.customerId && (
-                    <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Ver Perfil</button>
-                  )}
-                </div>
-                
-                <div className="p-4 flex items-center gap-4">
-                  <div className="size-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
-                    <Smartphone className="w-5 h-5" />
-                  </div>
+          {/* ABA 2: CHECKLIST INTERATIVO (1 CLIQUE) */}
+          {activeTab === 'checklist' && (
+            <div className="space-y-6">
+              <Card className="p-6 space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Aparelho / Modelo</p>
-                    <p className="font-bold">{selectedOrder.device}</p>
-                    {selectedOrder.serialNumber && (
-                      <p className="text-[10px] font-mono text-slate-400 mt-0.5">S/N: {selectedOrder.serialNumber}</p>
-                    )}
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white">Checklist de Inspeção (1 Clique no Selo)</h4>
+                    <p className="text-[10px] text-slate-400">Clique sobre o selo para alternar entre: OK (Verde) ➔ Defeito (Vermelho) ➔ Não Testado (Cinza)</p>
                   </div>
                 </div>
 
-                <div className="p-4 flex items-center gap-4">
-                  <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <User className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Técnico Responsável</p>
-                    <p className="font-bold">{responsibleTech ? responsibleTech.name : 'Não designado'}</p>
+                {/* Hardware */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Componentes de Hardware</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {CHECKLIST_HARDWARE.map(comp => {
+                      const item = selectedOrder.checklist?.[comp.key] || { status: 'nao_testado' as ChecklistStatus };
+                      const isBom = item.status === 'bom';
+                      const isRuim = item.status === 'ruim';
+
+                      return (
+                        <div key={comp.key} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <comp.icon className="size-4 text-slate-400 shrink-0" />
+                            <span className="text-xs font-bold truncate">{comp.label}</span>
+                          </div>
+                          <button
+                            onClick={() => handleToggleChecklist(comp.key)}
+                            className={cn(
+                              'text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg transition-all active:scale-95',
+                              isBom ? 'bg-emerald-500 text-white shadow-sm' :
+                              isRuim ? 'bg-red-500 text-white shadow-sm' :
+                              'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                            )}
+                          >
+                            {isBom ? 'OK' : isRuim ? 'Falha' : 'N/T'}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                <div className="p-4 flex items-center gap-4">
-                  <div className="size-8 rounded-lg bg-emerald-50 dark:bg-emerald-950 text-emerald-500 flex items-center justify-center shrink-0">
-                    <DollarSign className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Valor do Serviço</p>
-                    <p className="font-black text-lg text-emerald-600 dark:text-emerald-400">R$ {selectedOrder.value.toFixed(2)}</p>
+                {/* Software */}
+                <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Testes de Software & Sistema</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {CHECKLIST_SOFTWARE.map(comp => {
+                      const item = selectedOrder.checklist?.[comp.key] || { status: 'nao_testado' as ChecklistStatus };
+                      const isBom = item.status === 'bom';
+                      const isRuim = item.status === 'ruim';
+
+                      return (
+                        <div key={comp.key} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <comp.icon className="size-4 text-slate-400 shrink-0" />
+                            <span className="text-xs font-bold truncate">{comp.label}</span>
+                          </div>
+                          <button
+                            onClick={() => handleToggleChecklist(comp.key)}
+                            className={cn(
+                              'text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg transition-all active:scale-95',
+                              isBom ? 'bg-emerald-500 text-white shadow-sm' :
+                              isRuim ? 'bg-red-500 text-white shadow-sm' :
+                              'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                            )}
+                          >
+                            {isBom ? 'OK' : isRuim ? 'Falha' : 'N/T'}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </Card>
-            </section>
+            </div>
+          )}
 
-            {/* Diagnóstico & Observações */}
-            <section className="space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Diagnóstico e Comunicação</h4>
-              <div className="space-y-3">
-                
-                {/* Defeito Relatado */}
-                <Card className="p-4 bg-amber-50/20 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/40">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-amber-600 mb-2">Defeito Relatado</p>
-                  <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 break-words whitespace-pre-wrap">
-                    {selectedOrder.problem}
-                  </p>
-                </Card>
+          {/* ABA 3: ORÇAMENTO & PEÇAS */}
+          {activeTab === 'budget' && (
+            <div className="space-y-6">
+              <Card className="p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white">Orçamento de Peças Necessárias</h4>
+                  <span className="text-xs font-black text-primary">Total: R$ {(selectedOrder.budgetItems || []).reduce((a, b) => a + b.price, 0).toFixed(2)}</span>
+                </div>
 
-                {/* Obs Cliente */}
-                {selectedOrder.observationClient && (
-                  <Card className="p-4 bg-emerald-50/10 dark:bg-emerald-900/5 border-emerald-100 dark:border-emerald-900/20">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center gap-1 mb-2">
-                      <Eye className="size-3.5" /> Observação para o Cliente (Pública)
-                    </p>
-                    <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 break-words whitespace-pre-wrap">
-                      {selectedOrder.observationClient}
-                    </p>
-                  </Card>
-                )}
+                {/* Formulário de Adição Direta */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <input
+                    value={newBudgetItem.name}
+                    onChange={e => setNewBudgetItem(f => ({ ...f, name: e.target.value }))}
+                    placeholder="Nome da Peça (Ex: SSD 500GB)..."
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs font-bold outline-none"
+                  />
+                  <input
+                    value={newBudgetItem.link}
+                    onChange={e => setNewBudgetItem(f => ({ ...f, link: e.target.value }))}
+                    placeholder="Link de compra (privado para técnicos)..."
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs font-medium outline-none"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={newBudgetItem.price}
+                      onChange={e => setNewBudgetItem(f => ({ ...f, price: e.target.value }))}
+                      placeholder="Valor R$..."
+                      className="w-24 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-xs font-black text-emerald-600 outline-none"
+                    />
+                    <Button onClick={handleAddBudgetItemInline} size="sm" className="flex-1">
+                      <Plus className="size-4 mr-1" /> Adicionar
+                    </Button>
+                  </div>
+                </div>
 
-                {/* Laudo Técnico */}
-                {selectedOrder.technicalReport && (
-                  <Card className="p-4 bg-slate-100/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 mb-2">
-                      <EyeOff className="size-3.5" /> Laudo Técnico Interno (Privado)
-                    </p>
-                    <p className="text-sm font-medium leading-relaxed text-slate-700 dark:text-slate-300 break-words whitespace-pre-wrap">
-                      {selectedOrder.technicalReport}
-                    </p>
-                  </Card>
-                )}
-
-              </div>
-            </section>
-          </div>
-
-          {/* Checklist */}
-          {selectedOrder.checklist && Object.keys(selectedOrder.checklist).length > 0 && (
-            <section className="space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Checklist de Peças</h4>
-              <Card className="p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {CHECKLIST_COMPONENTS.map(comp => {
-                    const item = selectedOrder.checklist?.[comp.key];
-                    if (!item || item.status === 'nao_testado') return null;
-
-                    const isBom = item.status === 'bom';
-                    return (
-                      <div key={comp.key} className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <div className={cn('size-8 rounded-lg flex items-center justify-center shrink-0', isBom ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500')}>
-                          <comp.icon className="size-4.5" />
-                        </div>
+                {/* Lista de Peças */}
+                <div className="space-y-2">
+                  {(selectedOrder.budgetItems || []).map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Box className="size-4 text-slate-400 shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-black text-slate-700 dark:text-slate-200 leading-none mb-1">{comp.label}</p>
-                          <span className={cn('text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded', isBom ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950' : 'bg-red-50 text-red-500 dark:bg-red-950')}>
-                            {isBom ? 'Bom' : 'Defeituoso'}
-                          </span>
-                          {item.note && (
-                            <p className="text-[10px] text-slate-500 mt-1 leading-relaxed break-words">{item.note}</p>
+                          <p className="font-bold text-xs truncate">{item.name}</p>
+                          {item.link && (
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary underline truncate block max-w-md">
+                              {item.link}
+                            </a>
                           )}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            </section>
-          )}
-
-          {/* Orçamento de Peças */}
-          {selectedOrder.budgetItems && selectedOrder.budgetItems.length > 0 && (
-            <section className="space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Orçamento de Peças</h4>
-              <Card className="p-4 space-y-3">
-                <div className="space-y-2">
-                  {selectedOrder.budgetItems.map(item => (
-                    <div key={item.id} className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-3 flex items-center gap-3">
-                      <Box className="size-5 text-slate-400 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm truncate">{item.name}</p>
-                        {item.link && (
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Lock className="size-3 text-amber-500 shrink-0" />
-                            <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary underline font-medium truncate block max-w-[200px] md:max-w-md">
-                              {item.link}
-                            </a>
-                            <span className="text-[8px] font-black uppercase text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded shrink-0">
-                              Privado
-                            </span>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="font-black text-xs text-slate-800 dark:text-white">R$ {item.price.toFixed(2)}</span>
+                        <button onClick={() => handleRemoveBudgetItemInline(item.id)} className="text-red-500 hover:text-red-700 p-1">
+                          <X className="size-4" />
+                        </button>
                       </div>
-                      <p className="font-black text-sm shrink-0">R$ {item.price.toFixed(2)}</p>
                     </div>
                   ))}
                 </div>
-                <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-bold text-slate-400">Total do Orçamento</span>
-                  <span className="font-black text-lg text-primary">R$ {selectedOrder.budgetItems.reduce((acc, i) => acc + i.price, 0).toFixed(2)}</span>
+              </Card>
+            </div>
+          )}
+
+          {/* ABA 4: FOTOS E VÍDEOS */}
+          {activeTab === 'media' && (
+            <div className="space-y-6">
+              <Card className="p-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white">Galeria de Fotos e Vídeos</h4>
+                  <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} size="sm">
+                    <Upload className="size-4 mr-1" /> {uploading ? 'Enviando...' : 'Adicionar Mídia'}
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    className="hidden"
+                    onChange={e => {
+                      Array.from(e.target.files || []).forEach(handleDirectFileUpload);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {(selectedOrder.mediaUrls || []).map((m, i) => (
+                    <div key={i} className="aspect-video relative rounded-xl overflow-hidden bg-black border border-slate-200 dark:border-slate-700 group">
+                      {m.type === 'image' ? (
+                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                          <img src={m.url} alt={m.name || `Foto ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        </a>
+                      ) : (
+                        <video src={m.url} controls className="w-full h-full object-cover bg-black" />
+                      )}
+                    </div>
+                  ))}
                 </div>
               </Card>
-            </section>
+            </div>
           )}
 
-          {/* Fotos e Vídeos */}
-          {selectedOrder.mediaUrls && selectedOrder.mediaUrls.length > 0 && (
-            <section className="space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Fotos e Vídeos</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {selectedOrder.mediaUrls.map((m, i) => (
-                  <Card key={i} className="overflow-hidden aspect-video relative group border border-slate-100 dark:border-slate-800">
-                    {m.type === 'image' ? (
-                      <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                        <img src={m.url} alt={m.name || `Mídia ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      </a>
-                    ) : (
-                      <video src={m.url} controls className="w-full h-full object-cover rounded-xl bg-black" />
-                    )}
-                  </Card>
-                ))}
-              </div>
-            </section>
+          {/* ABA 5: LAUDO TÉCNICO & OBSERVAÇÃO DO CLIENTE */}
+          {activeTab === 'report' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="p-6 space-y-3 bg-emerald-50/20 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30">
+                <div className="flex items-center gap-2 text-emerald-600">
+                  <Eye className="size-4" />
+                  <h4 className="text-xs font-black uppercase tracking-widest">Informativo para o Cliente (Clique para editar)</h4>
+                </div>
+                <InlineTextarea
+                  value={selectedOrder.observationClient || ''}
+                  onSave={(v) => handleUpdateOrderField('observation_client', v)}
+                  placeholder="Clique para digitar as observações visíveis para o cliente no link de rastreio..."
+                />
+              </Card>
+
+              <Card className="p-6 space-y-3 bg-slate-100/50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Lock className="size-4 text-amber-500" />
+                  <h4 className="text-xs font-black uppercase tracking-widest">Laudo Técnico Interno (Privado - Clique para editar)</h4>
+                </div>
+                <InlineTextarea
+                  value={selectedOrder.technicalReport || ''}
+                  onSave={(v) => handleUpdateOrderField('technical_report', v)}
+                  placeholder="Clique para digitar anotações privadas apenas para os técnicos..."
+                />
+              </Card>
+            </div>
           )}
 
-          {/* Ações de Status */}
-          <section className="space-y-3 mt-4">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Ações de Status</h4>
+          {/* MUDANÇA DE STATUS NO RODAPÉ */}
+          <section className="space-y-3 mt-8 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 px-1">Ações de Mudança de Status</h4>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               {statusOptions.map((opt) => (
                 <button
@@ -733,9 +891,9 @@ export const OrdersView = ({
       />
 
       {viewCustomerId && (
-        <CustomerDetailsModal 
-          customerId={viewCustomerId} 
-          onClose={() => setViewCustomerId(null)} 
+        <CustomerDetailsModal
+          customerId={viewCustomerId}
+          onClose={() => setViewCustomerId(null)}
         />
       )}
     </div>
