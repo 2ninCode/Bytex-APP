@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  X, Search, ChevronDown, Plus, Trash2, RefreshCw, Upload, Link,
+  X, Search, ChevronDown, Plus, Trash2, RefreshCw, Upload, Link as LinkIcon,
   Laptop, User, Users, Eye, EyeOff, ImageIcon, Video, Package,
   CheckCircle2, AlertCircle, HelpCircle, Cpu, HardDrive, Zap,
-  Monitor, Thermometer, Battery, Shield, Sparkles, Brain, Copy, ChevronRight
+  Monitor, Thermometer, Battery, Shield, Sparkles, Brain, Copy, ChevronRight,
+  Wifi, Volume2, Keyboard, Terminal, Activity, Lock, Disc
 } from 'lucide-react';
 import { Order, Employee, CustomerDevice, Customer, Checklist, ChecklistItem, ChecklistStatus, BudgetItem, MediaFile } from '../../types';
 import { supabase } from '../../lib/supabase';
@@ -14,17 +15,31 @@ import { Button } from '../ui/Button';
 import { useAI } from '../../hooks/useAI';
 
 // ── Constants ────────────────────────────────────────────────────
-const CHECKLIST_COMPONENTS: { key: keyof Checklist; label: string; icon: any }[] = [
+export const CHECKLIST_HARDWARE: { key: keyof Checklist; label: string; icon: any }[] = [
   { key: 'ram',         label: 'Memória RAM',         icon: HardDrive },
-  { key: 'hd',          label: 'HD / SSD',             icon: HardDrive },
-  { key: 'cpu',         label: 'Processador',          icon: Cpu },
-  { key: 'gpu',         label: 'Placa de Vídeo',       icon: Zap },
+  { key: 'hd',          label: 'HD / SSD / NVMe',     icon: HardDrive },
+  { key: 'cpu',         label: 'Processador (CPU)',   icon: Cpu },
+  { key: 'gpu',         label: 'Placa de Vídeo (GPU)', icon: Zap },
   { key: 'motherboard', label: 'Placa Mãe',            icon: Shield },
   { key: 'psu',         label: 'Fonte de Alimentação', icon: Zap },
   { key: 'display',     label: 'Display / Tela',       icon: Monitor },
   { key: 'cooling',     label: 'Cooling / Ventoinha',  icon: Thermometer },
-  { key: 'battery',     label: 'Bateria',              icon: Battery },
+  { key: 'battery',     label: 'Bateria / Autonomia',  icon: Battery },
+  { key: 'ports',       label: 'Painel Frontal & USB', icon: Terminal },
+  { key: 'audio',       label: 'Saída de Áudio / P2',  icon: Volume2 },
+  { key: 'network',     label: 'Wi-Fi / Bluetooth',    icon: Wifi },
+  { key: 'keyboard',    label: 'Teclado & Touchpad',   icon: Keyboard },
 ];
+
+export const CHECKLIST_SOFTWARE: { key: keyof Checklist; label: string; icon: any }[] = [
+  { key: 'os_boot',     label: 'Inicialização do SO', icon: Disc },
+  { key: 'drivers',     label: 'Drivers de Dispositivo', icon: Terminal },
+  { key: 'antivirus',   label: 'Antivírus & Segurança', icon: Lock },
+  { key: 'stress_test', label: 'Teste de Carga & Temp', icon: Activity },
+  { key: 'clean_disk',  label: 'Limpeza de Sistema',  icon: Sparkles },
+];
+
+export const CHECKLIST_COMPONENTS = [...CHECKLIST_HARDWARE, ...CHECKLIST_SOFTWARE];
 
 const STATUS_OPTIONS = { bom: 'Bom', ruim: 'Ruim', nao_testado: 'Não Testado' } as const;
 
@@ -635,42 +650,88 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
               ) : undefined
             }
           >
-            <div className="space-y-2 pt-4">
-              {CHECKLIST_COMPONENTS.map(comp => {
-                const item = checklist[comp.key] || { status: 'nao_testado' as ChecklistStatus, note: '' };
-                return (
-                  <div key={comp.key} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <comp.icon className="size-4 text-slate-400 shrink-0" />
-                      <span className="text-sm font-bold flex-1">{comp.label}</span>
-                      <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-                        {(Object.entries(STATUS_OPTIONS) as [ChecklistStatus, string][]).map(([val, lbl]) => (
-                          <button
-                            key={val}
-                            onClick={() => setChecklistItem(comp.key, 'status', val)}
-                            className={cn(
-                              'px-2.5 py-1.5 text-[9px] font-black uppercase transition-all',
-                              item.status === val
-                                ? val === 'bom' ? 'bg-emerald-500 text-white' : val === 'ruim' ? 'bg-red-500 text-white' : 'bg-slate-400 text-white'
-                                : 'bg-transparent text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
-                            )}
-                          >
-                            {lbl}
-                          </button>
-                        ))}
+            <div className="space-y-4 pt-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Componentes de Hardware</p>
+                <div className="space-y-2">
+                  {CHECKLIST_HARDWARE.map(comp => {
+                    const item = checklist[comp.key] || { status: 'nao_testado' as ChecklistStatus, note: '' };
+                    return (
+                      <div key={comp.key} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <comp.icon className="size-4 text-slate-400 shrink-0" />
+                          <span className="text-sm font-bold flex-1">{comp.label}</span>
+                          <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                            {(Object.entries(STATUS_OPTIONS) as [ChecklistStatus, string][]).map(([val, lbl]) => (
+                              <button
+                                key={val}
+                                onClick={() => setChecklistItem(comp.key, 'status', val)}
+                                className={cn(
+                                  'px-2.5 py-1.5 text-[9px] font-black uppercase transition-all',
+                                  item.status === val
+                                    ? val === 'bom' ? 'bg-emerald-500 text-white' : val === 'ruim' ? 'bg-red-500 text-white' : 'bg-slate-400 text-white'
+                                    : 'bg-transparent text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                )}
+                              >
+                                {lbl}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {item.status !== 'nao_testado' && (
+                          <input
+                            value={item.note || ''}
+                            onChange={e => setChecklistItem(comp.key, 'note', e.target.value)}
+                            placeholder={item.status === 'ruim' ? 'Descreva o problema...' : 'Observação (opcional)'}
+                            className="w-full bg-slate-50 dark:bg-slate-700 rounded-lg p-2 text-xs font-medium outline-none border border-slate-200 dark:border-slate-600 focus:border-primary"
+                          />
+                        )}
                       </div>
-                    </div>
-                    {item.status !== 'nao_testado' && (
-                      <input
-                        value={item.note || ''}
-                        onChange={e => setChecklistItem(comp.key, 'note', e.target.value)}
-                        placeholder={item.status === 'ruim' ? 'Descreva o problema...' : 'Observação (opcional)'}
-                        className="w-full bg-slate-50 dark:bg-slate-700 rounded-lg p-2 text-xs font-medium outline-none border border-slate-200 dark:border-slate-600 focus:border-primary"
-                      />
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Testes de Software & Sistema</p>
+                <div className="space-y-2">
+                  {CHECKLIST_SOFTWARE.map(comp => {
+                    const item = checklist[comp.key] || { status: 'nao_testado' as ChecklistStatus, note: '' };
+                    return (
+                      <div key={comp.key} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <comp.icon className="size-4 text-slate-400 shrink-0" />
+                          <span className="text-sm font-bold flex-1">{comp.label}</span>
+                          <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                            {(Object.entries(STATUS_OPTIONS) as [ChecklistStatus, string][]).map(([val, lbl]) => (
+                              <button
+                                key={val}
+                                onClick={() => setChecklistItem(comp.key, 'status', val)}
+                                className={cn(
+                                  'px-2.5 py-1.5 text-[9px] font-black uppercase transition-all',
+                                  item.status === val
+                                    ? val === 'bom' ? 'bg-emerald-500 text-white' : val === 'ruim' ? 'bg-red-500 text-white' : 'bg-slate-400 text-white'
+                                    : 'bg-transparent text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                                )}
+                              >
+                                {lbl}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {item.status !== 'nao_testado' && (
+                          <input
+                            value={item.note || ''}
+                            onChange={e => setChecklistItem(comp.key, 'note', e.target.value)}
+                            placeholder="Observação do teste de software"
+                            className="w-full bg-slate-50 dark:bg-slate-700 rounded-lg p-2 text-xs font-medium outline-none border border-slate-200 dark:border-slate-600 focus:border-primary"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </Section>
 
@@ -719,7 +780,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
                 {/* URL input */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                    <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
                     <input
                       value={mediaUrl}
                       onChange={e => setMediaUrl(e.target.value)}
@@ -785,7 +846,7 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
                   <input
                     value={budgetForm.link}
                     onChange={e => setBudgetForm(f => ({ ...f, link: e.target.value }))}
-                    placeholder="Link de compra (opcional)"
+                    placeholder="Link de compra (privado para técnicos)"
                     className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary"
                   />
                   <div className="relative">
@@ -799,6 +860,9 @@ export const OrderFormModal = ({ order, onSave, onCancel, currentUser, employees
                     />
                   </div>
                 </div>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                  🔒 O link de compra é restrito para controle interno dos técnicos e NUNCA é exibido ao cliente.
+                </p>
                 <Button onClick={handleAddBudgetItem} disabled={!budgetForm.name.trim()} className="w-full" size="sm">
                   <Plus className="size-4 mr-1" /> Adicionar Peça
                 </Button>

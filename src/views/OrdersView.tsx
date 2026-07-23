@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check,
   RefreshCw, Box, User, ArrowUpRight, Trash2, Smartphone, DollarSign,
   AlertCircle, MoreVertical, Eye, EyeOff, CheckCircle2, Shield, Cpu,
   HardDrive, Zap, Monitor, Thermometer, Battery, Play, AlertTriangle,
-  Copy, ExternalLink
+  Copy, ExternalLink, Sparkles, Save, Lock
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -12,18 +12,8 @@ import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { cn } from '../components/ui/utils';
 import { Order, OrderStatus, Employee, Checklist } from '../types';
 import { CustomerDetailsModal } from '../components/modals/CustomerDetailsModal';
-
-const CHECKLIST_COMPONENTS: { key: keyof Checklist; label: string; icon: any }[] = [
-  { key: 'ram',         label: 'RAM',         icon: HardDrive },
-  { key: 'hd',          label: 'Armazenamento', icon: HardDrive },
-  { key: 'cpu',         label: 'Processador', icon: Cpu },
-  { key: 'gpu',         label: 'Vídeo',       icon: Zap },
-  { key: 'motherboard', label: 'Placa Mãe',   icon: Shield },
-  { key: 'psu',         label: 'Fonte',       icon: Zap },
-  { key: 'display',     label: 'Tela',        icon: Monitor },
-  { key: 'cooling',     label: 'Cooling',     icon: Thermometer },
-  { key: 'battery',     label: 'Bateria',     icon: Battery },
-];
+import { CHECKLIST_HARDWARE, CHECKLIST_SOFTWARE, CHECKLIST_COMPONENTS } from '../components/modals/OrderFormModal';
+import { supabase } from '../lib/supabase';
 
 export const OrdersView = ({
   currentUser,
@@ -56,6 +46,35 @@ export const OrdersView = ({
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [copiedLinkId, setCopiedLinkId] = React.useState<string | null>(null);
 
+  // Quick Inline Edit State
+  const [isQuickEditing, setIsQuickEditing] = React.useState(false);
+  const [quickForm, setQuickForm] = React.useState({
+    device: '',
+    serialNumber: '',
+    value: '',
+    observationClient: '',
+    technicalReport: '',
+    responsibleEmployeeId: ''
+  });
+
+  const selectedOrder = orders.find(o => o.id === selectedOrderId);
+
+  // Sincroniza formulário rápido ao selecionar uma OS
+  React.useEffect(() => {
+    setErrorMessage(null);
+    if (selectedOrder) {
+      setQuickForm({
+        device: selectedOrder.device || '',
+        serialNumber: selectedOrder.serialNumber || '',
+        value: String(selectedOrder.value || 0),
+        observationClient: selectedOrder.observationClient || '',
+        technicalReport: selectedOrder.technicalReport || '',
+        responsibleEmployeeId: selectedOrder.responsibleEmployeeId || ''
+      });
+      setIsQuickEditing(false);
+    }
+  }, [selectedOrderId, selectedOrder]);
+
   const handleCopyTrackingLink = (id: string) => {
     const link = `${window.location.origin}${window.location.pathname}?track=${id}`;
     navigator.clipboard.writeText(link).then(() => {
@@ -66,12 +85,25 @@ export const OrdersView = ({
     });
   };
 
-  const selectedOrder = orders.find(o => o.id === selectedOrderId);
+  const handleSaveQuickEdit = async () => {
+    if (!selectedOrder || !supabase) return;
+    const payload = {
+      device: quickForm.device,
+      serial_number: quickForm.serialNumber,
+      value: parseFloat(quickForm.value) || 0,
+      observation_client: quickForm.observationClient || null,
+      technical_report: quickForm.technicalReport || null,
+      responsible_employee_id: quickForm.responsibleEmployeeId || null,
+    };
 
-  // Limpa mensagens de erro ao mudar de ordem
-  React.useEffect(() => {
-    setErrorMessage(null);
-  }, [selectedOrderId]);
+    const { error } = await supabase.from('orders').update(payload).eq('id', selectedOrder.id);
+    if (error) {
+      alert(`Erro ao salvar edição rápida: ${error.message}`);
+    } else {
+      setIsQuickEditing(false);
+      onUpdateStatus(selectedOrder.id, selectedOrder.status);
+    }
+  };
 
   if (!selectedOrderId || !selectedOrder) {
     return (
@@ -223,6 +255,19 @@ export const OrdersView = ({
           <div className="flex items-center gap-1 md:gap-2 shrink-0">
             <div className="hidden md:flex items-center gap-2">
               <button 
+                onClick={() => setIsQuickEditing(!isQuickEditing)}
+                className={cn(
+                  "p-2 rounded-xl transition-all active:scale-95 flex items-center gap-2 border font-bold text-[10px] uppercase tracking-wider",
+                  isQuickEditing 
+                    ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
+                    : "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:border-amber-900/40"
+                )}
+                title="Edição Rápida na Tela"
+              >
+                <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                <span>Edição Rápida</span>
+              </button>
+              <button 
                 onClick={() => {
                   const link = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
                   window.open(link, '_blank');
@@ -250,9 +295,9 @@ export const OrdersView = ({
               </button>
               {currentUser.role !== 'funcionario' && (
                 <>
-                  <button onClick={() => onEdit(selectedOrder)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Editar">
+                  <button onClick={() => onEdit(selectedOrder)} className="p-2 bg-primary/5 text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Editar Completo">
                     <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Editar</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Editar Form</span>
                   </button>
                   <button onClick={() => setDeleteId(selectedOrder.id)} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all active:scale-95 flex items-center gap-2" title="Remover">
                     <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
@@ -275,6 +320,15 @@ export const OrdersView = ({
                       <button 
                         onClick={() => { 
                           setShowMobileActions(false); 
+                          setIsQuickEditing(!isQuickEditing);
+                        }} 
+                        className="w-full text-left px-3 py-2 text-sm font-bold text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 rounded-xl flex items-center gap-3"
+                      >
+                         <Sparkles className="w-4 h-4 text-amber-500" /> Edição Rápida
+                      </button>
+                      <button 
+                        onClick={() => { 
+                          setShowMobileActions(false); 
                           const link = `${window.location.origin}${window.location.pathname}?track=${selectedOrder.id}`;
                           window.open(link, '_blank');
                         }} 
@@ -294,7 +348,7 @@ export const OrdersView = ({
                       {currentUser.role !== 'funcionario' && (
                         <>
                           <button onClick={() => { setShowMobileActions(false); onEdit(selectedOrder); }} className="w-full text-left px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl flex items-center gap-3">
-                             <Edit2 className="w-4 h-4 text-primary" /> Editar
+                             <Edit2 className="w-4 h-4 text-primary" /> Editar Completo
                           </button>
                           <hr className="border-slate-100 dark:border-slate-700 my-1 mx-2" />
                           <button onClick={() => { setShowMobileActions(false); setDeleteId(selectedOrder.id); }} className="w-full text-left px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl flex items-center gap-3">
@@ -319,6 +373,94 @@ export const OrdersView = ({
               <AlertTriangle className="size-5 shrink-0 mt-0.5" />
               <div className="text-sm font-bold leading-relaxed">{errorMessage}</div>
             </div>
+          )}
+
+          {/* Painel de Edição Rápida Inline */}
+          {isQuickEditing && (
+            <Card className="p-5 border-2 border-amber-400/60 bg-amber-50/30 dark:bg-amber-950/10 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-amber-200 dark:border-amber-900/40 pb-3">
+                <h4 className="text-xs font-black uppercase tracking-widest text-amber-600 flex items-center gap-2">
+                  <Sparkles className="size-4" /> Edição Rápida Direta da OS #{selectedOrder.id}
+                </h4>
+                <button onClick={() => setIsQuickEditing(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Aparelho / Equipamento</label>
+                  <input
+                    value={quickForm.device}
+                    onChange={e => setQuickForm(f => ({ ...f, device: e.target.value }))}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Número de Série (S/N)</label>
+                  <input
+                    value={quickForm.serialNumber}
+                    onChange={e => setQuickForm(f => ({ ...f, serialNumber: e.target.value }))}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Valor do Serviço (R$)</label>
+                  <input
+                    type="number"
+                    value={quickForm.value}
+                    onChange={e => setQuickForm(f => ({ ...f, value: e.target.value }))}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-black text-emerald-600 outline-none focus:border-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 block mb-1">Técnico Responsável</label>
+                  <select
+                    value={quickForm.responsibleEmployeeId}
+                    onChange={e => setQuickForm(f => ({ ...f, responsibleEmployeeId: e.target.value }))}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold outline-none focus:border-primary"
+                  >
+                    <option value="">Não designado</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name} ({emp.jobTitle})</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-emerald-600 block mb-1 flex items-center gap-1">
+                  <Eye className="size-3" /> Observação para o Cliente (Pública no rastreio)
+                </label>
+                <textarea
+                  rows={2}
+                  value={quickForm.observationClient}
+                  onChange={e => setQuickForm(f => ({ ...f, observationClient: e.target.value }))}
+                  placeholder="Informações que o cliente poderá ler no link..."
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase text-slate-400 block mb-1 flex items-center gap-1">
+                  <Lock className="size-3" /> Laudo Técnico Interno (Privado)
+                </label>
+                <textarea
+                  rows={2}
+                  value={quickForm.technicalReport}
+                  onChange={e => setQuickForm(f => ({ ...f, technicalReport: e.target.value }))}
+                  placeholder="Apenas para equipe de técnicos..."
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-900/30">
+                <Button variant="secondary" size="sm" onClick={() => setIsQuickEditing(false)}>Cancelar</Button>
+                <Button size="sm" onClick={handleSaveQuickEdit} className="bg-primary text-white">
+                  <Save className="size-4 mr-1" /> Salvar Alterações Agora
+                </Button>
+              </div>
+            </Card>
           )}
 
           {hasRuimChecklist && (
@@ -502,9 +644,15 @@ export const OrdersView = ({
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate">{item.name}</p>
                         {item.link && (
-                          <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary underline font-medium truncate block">
-                            {item.link}
-                          </a>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Lock className="size-3 text-amber-500 shrink-0" />
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary underline font-medium truncate block max-w-[200px] md:max-w-md">
+                              {item.link}
+                            </a>
+                            <span className="text-[8px] font-black uppercase text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded shrink-0">
+                              Privado
+                            </span>
+                          </div>
                         )}
                       </div>
                       <p className="font-black text-sm shrink-0">R$ {item.price.toFixed(2)}</p>

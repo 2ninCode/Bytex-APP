@@ -10,18 +10,7 @@ import { Button } from '../components/ui/Button';
 import { cn } from '../components/ui/utils';
 import { Order, OrderStatus, Checklist } from '../types';
 import { supabase } from '../lib/supabase';
-
-const CHECKLIST_COMPONENTS: { key: keyof Checklist; label: string; icon: any }[] = [
-  { key: 'ram',         label: 'RAM',         icon: HardDrive },
-  { key: 'hd',          label: 'Armazenamento', icon: HardDrive },
-  { key: 'cpu',         label: 'Processador', icon: Cpu },
-  { key: 'gpu',         label: 'Vídeo',       icon: Zap },
-  { key: 'motherboard', label: 'Placa Mãe',   icon: Shield },
-  { key: 'psu',         label: 'Fonte',       icon: Zap },
-  { key: 'display',     label: 'Tela',        icon: Monitor },
-  { key: 'cooling',     label: 'Cooling',     icon: Thermometer },
-  { key: 'battery',     label: 'Bateria',     icon: Battery },
-];
+import { CHECKLIST_COMPONENTS } from '../components/modals/OrderFormModal';
 
 export const StatusTrackerView = ({ orderId, onBack }: { orderId?: string, onBack: () => void }) => {
   const [searchId, setSearchId] = useState(orderId || '');

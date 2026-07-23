@@ -12,15 +12,26 @@ export interface ChecklistItem {
 }
 
 export interface Checklist {
-  ram:         ChecklistItem;
-  hd:          ChecklistItem;
-  cpu:         ChecklistItem;
-  gpu:         ChecklistItem;
-  motherboard: ChecklistItem;
-  psu:         ChecklistItem;
-  display:     ChecklistItem;
-  cooling:     ChecklistItem;
-  battery:     ChecklistItem;
+  // ── Hardware ───────────────────────────────────
+  ram?:         ChecklistItem;
+  hd?:          ChecklistItem;
+  cpu?:         ChecklistItem;
+  gpu?:         ChecklistItem;
+  motherboard?: ChecklistItem;
+  psu?:         ChecklistItem;
+  display?:     ChecklistItem;
+  cooling?:     ChecklistItem;
+  battery?:     ChecklistItem;
+  ports?:       ChecklistItem;
+  audio?:       ChecklistItem;
+  network?:     ChecklistItem;
+  keyboard?:    ChecklistItem;
+  // ── Software & Testes ──────────────────────────
+  os_boot?:     ChecklistItem;
+  drivers?:     ChecklistItem;
+  antivirus?:   ChecklistItem;
+  stress_test?: ChecklistItem;
+  clean_disk?:  ChecklistItem;
 }
 
 export interface BudgetItem {
