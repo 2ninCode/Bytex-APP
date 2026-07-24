@@ -196,21 +196,32 @@ export const OrdersView = ({
     onUpdateStatus(selectedOrder.id, selectedOrder.status);
   };
 
-  // Alternar Status do Checklist com 1 Clique
-  const handleToggleChecklist = async (compKey: keyof Checklist) => {
+  // Atualizar Status do Checklist
+  const handleUpdateChecklistStatus = async (compKey: keyof Checklist, newStatus: ChecklistStatus) => {
     if (!selectedOrder || !supabase) return;
 
     const currentChecklist = selectedOrder.checklist || {};
     const currentItem = currentChecklist[compKey] || { status: 'nao_testado' as ChecklistStatus, note: '' };
 
-    let nextStatus: ChecklistStatus = 'bom';
-    if (currentItem.status === 'bom') nextStatus = 'ruim';
-    else if (currentItem.status === 'ruim') nextStatus = 'nao_testado';
-    else nextStatus = 'bom';
+    const newChecklist = {
+      ...currentChecklist,
+      [compKey]: { ...currentItem, status: newStatus }
+    };
+
+    await supabase.from('orders').update({ checklist: newChecklist }).eq('id', selectedOrder.id);
+    onUpdateStatus(selectedOrder.id, selectedOrder.status);
+  };
+
+  // Atualizar Observação do Checklist
+  const handleUpdateChecklistNote = async (compKey: keyof Checklist, newNote: string) => {
+    if (!selectedOrder || !supabase) return;
+
+    const currentChecklist = selectedOrder.checklist || {};
+    const currentItem = currentChecklist[compKey] || { status: 'nao_testado' as ChecklistStatus, note: '' };
 
     const newChecklist = {
       ...currentChecklist,
-      [compKey]: { ...currentItem, status: nextStatus }
+      [compKey]: { ...currentItem, note: newNote }
     };
 
     await supabase.from('orders').update({ checklist: newChecklist }).eq('id', selectedOrder.id);
@@ -640,37 +651,65 @@ export const OrdersView = ({
               <Card className="p-6 space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                   <div>
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white">Checklist de Inspeção (1 Clique no Selo)</h4>
-                    <p className="text-[10px] text-slate-400">Clique sobre o selo para alternar entre: OK (Verde) ➔ Defeito (Vermelho) ➔ Não Testado (Cinza)</p>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-800 dark:text-white">Checklist de Inspeção</h4>
+                    <p className="text-[10px] text-slate-400">Defina o status e clique para adicionar observações.</p>
                   </div>
                 </div>
 
                 {/* Hardware */}
                 <div className="space-y-3">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Componentes de Hardware</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {CHECKLIST_HARDWARE.map(comp => {
-                      const item = selectedOrder.checklist?.[comp.key] || { status: 'nao_testado' as ChecklistStatus };
+                      const item = selectedOrder.checklist?.[comp.key] || { status: 'nao_testado' as ChecklistStatus, note: '' };
                       const isBom = item.status === 'bom';
                       const isRuim = item.status === 'ruim';
+                      const isNaoTestado = item.status === 'nao_testado';
 
                       return (
-                        <div key={comp.key} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <comp.icon className="size-4 text-slate-400 shrink-0" />
-                            <span className="text-xs font-bold truncate">{comp.label}</span>
+                        <div key={comp.key} className="flex flex-col p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 gap-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <comp.icon className="size-4 text-slate-400 shrink-0" />
+                              <span className="text-xs font-bold truncate">{comp.label}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleUpdateChecklistStatus(comp.key, 'bom')}
+                                className={cn(
+                                  'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all active:scale-95',
+                                  isBom ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 hover:bg-emerald-100 hover:text-emerald-600'
+                                )}
+                              >
+                                OK
+                              </button>
+                              <button
+                                onClick={() => handleUpdateChecklistStatus(comp.key, 'ruim')}
+                                className={cn(
+                                  'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all active:scale-95',
+                                  isRuim ? 'bg-red-500 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 hover:bg-red-100 hover:text-red-600'
+                                )}
+                              >
+                                Falha
+                              </button>
+                              <button
+                                onClick={() => handleUpdateChecklistStatus(comp.key, 'nao_testado')}
+                                className={cn(
+                                  'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all active:scale-95',
+                                  isNaoTestado ? 'bg-slate-400 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 hover:bg-slate-300'
+                                )}
+                              >
+                                N/T
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => handleToggleChecklist(comp.key)}
-                            className={cn(
-                              'text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg transition-all active:scale-95',
-                              isBom ? 'bg-emerald-500 text-white shadow-sm' :
-                              isRuim ? 'bg-red-500 text-white shadow-sm' :
-                              'bg-slate-200 dark:bg-slate-700 text-slate-400'
-                            )}
-                          >
-                            {isBom ? 'OK' : isRuim ? 'Falha' : 'N/T'}
-                          </button>
+                          <InlineText
+                            value={item.note || ''}
+                            onSave={(v) => handleUpdateChecklistNote(comp.key, v)}
+                            placeholder="Adicionar comentário..."
+                            className="text-[10px] text-slate-500 ml-6 block"
+                            inputClassName="w-full text-[10px]"
+                          />
                         </div>
                       );
                     })}
@@ -680,29 +719,57 @@ export const OrdersView = ({
                 {/* Software */}
                 <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Testes de Software & Sistema</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {CHECKLIST_SOFTWARE.map(comp => {
-                      const item = selectedOrder.checklist?.[comp.key] || { status: 'nao_testado' as ChecklistStatus };
+                      const item = selectedOrder.checklist?.[comp.key] || { status: 'nao_testado' as ChecklistStatus, note: '' };
                       const isBom = item.status === 'bom';
                       const isRuim = item.status === 'ruim';
+                      const isNaoTestado = item.status === 'nao_testado';
 
                       return (
-                        <div key={comp.key} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <comp.icon className="size-4 text-slate-400 shrink-0" />
-                            <span className="text-xs font-bold truncate">{comp.label}</span>
+                        <div key={comp.key} className="flex flex-col p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 gap-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <comp.icon className="size-4 text-slate-400 shrink-0" />
+                              <span className="text-xs font-bold truncate">{comp.label}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleUpdateChecklistStatus(comp.key, 'bom')}
+                                className={cn(
+                                  'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all active:scale-95',
+                                  isBom ? 'bg-emerald-500 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 hover:bg-emerald-100 hover:text-emerald-600'
+                                )}
+                              >
+                                OK
+                              </button>
+                              <button
+                                onClick={() => handleUpdateChecklistStatus(comp.key, 'ruim')}
+                                className={cn(
+                                  'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all active:scale-95',
+                                  isRuim ? 'bg-red-500 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 hover:bg-red-100 hover:text-red-600'
+                                )}
+                              >
+                                Falha
+                              </button>
+                              <button
+                                onClick={() => handleUpdateChecklistStatus(comp.key, 'nao_testado')}
+                                className={cn(
+                                  'text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded transition-all active:scale-95',
+                                  isNaoTestado ? 'bg-slate-400 text-white shadow-sm' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 hover:bg-slate-300'
+                                )}
+                              >
+                                N/T
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => handleToggleChecklist(comp.key)}
-                            className={cn(
-                              'text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg transition-all active:scale-95',
-                              isBom ? 'bg-emerald-500 text-white shadow-sm' :
-                              isRuim ? 'bg-red-500 text-white shadow-sm' :
-                              'bg-slate-200 dark:bg-slate-700 text-slate-400'
-                            )}
-                          >
-                            {isBom ? 'OK' : isRuim ? 'Falha' : 'N/T'}
-                          </button>
+                          <InlineText
+                            value={item.note || ''}
+                            onSave={(v) => handleUpdateChecklistNote(comp.key, v)}
+                            placeholder="Adicionar comentário..."
+                            className="text-[10px] text-slate-500 ml-6 block"
+                            inputClassName="w-full text-[10px]"
+                          />
                         </div>
                       );
                     })}
