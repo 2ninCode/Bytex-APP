@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import {
   Plus, ClipboardList, Laptop, ChevronRight, ArrowLeft, Edit2, X, Check,
   RefreshCw, Box, User, ArrowUpRight, Trash2, Smartphone, DollarSign,
   AlertCircle, MoreVertical, Eye, EyeOff, CheckCircle2, Shield, Cpu,
   HardDrive, Zap, Monitor, Thermometer, Battery, Play, AlertTriangle,
-  Copy, ExternalLink, Sparkles, Save, Lock, Terminal, Wifi, Volume2, Disc, Activity, Upload
+  Copy, ExternalLink, Sparkles, Save, Lock, Terminal, Wifi, Volume2, Disc, Activity, Upload, Search
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -181,7 +182,7 @@ export const OrdersView = ({
   };
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (finishingCountdown !== null && finishingCountdown > 0) {
       timer = setTimeout(() => {
         setFinishingCountdown(prev => (prev !== null ? prev - 1 : null));
@@ -201,7 +202,7 @@ export const OrdersView = ({
   }, [finishingCountdown, selectedOrder, onUpdateStatus, onBack]);
 
   // Live Update de qualquer campo da Ordem de Serviço
-  const handleUpdateOrderField = async (field: keyof Order, val: any) => {
+  const handleUpdateOrderField = async (field: string, val: any) => {
     if (!selectedOrder || !supabase) return;
     const { error } = await supabase.from('orders').update({ [field]: val }).eq('id', selectedOrder.id);
     if (error) {
