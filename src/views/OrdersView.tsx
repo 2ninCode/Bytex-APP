@@ -148,6 +148,7 @@ export const OrdersView = ({
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'checklist' | 'budget' | 'media' | 'report'>('overview');
   const [uploading, setUploading] = useState(false);
+  const [selectedMediaPreview, setSelectedMediaPreview] = useState<MediaFile | null>(null);
 
   // Form para nova peça
   const [newBudgetItem, setNewBudgetItem] = useState({ name: '', link: '', price: '' });
@@ -267,6 +268,17 @@ export const OrdersView = ({
     } finally {
       setUploading(false);
     }
+  };
+
+  // Remover Mídia
+  const handleRemoveMedia = async (index: number) => {
+    if (!selectedOrder || !supabase) return;
+    if (!confirm('Tem certeza que deseja remover esta foto/vídeo?')) return;
+    
+    const updatedMedia = [...(selectedOrder.mediaUrls || [])];
+    updatedMedia.splice(index, 1);
+    await supabase.from('orders').update({ media_urls: updatedMedia }).eq('id', selectedOrder.id);
+    onUpdateStatus(selectedOrder.id, selectedOrder.status);
   };
 
   if (!selectedOrderId || !selectedOrder) {
@@ -869,10 +881,17 @@ export const OrdersView = ({
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {(selectedOrder.mediaUrls || []).map((m, i) => (
                     <div key={i} className="aspect-video relative rounded-xl overflow-hidden bg-black border border-slate-200 dark:border-slate-700 group">
+                      <button 
+                        onClick={() => handleRemoveMedia(i)}
+                        className="absolute top-2 right-2 bg-black/60 hover:bg-red-500 text-white p-1.5 rounded-lg z-10 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Remover Mídia"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
                       {m.type === 'image' ? (
-                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                        <div onClick={() => setSelectedMediaPreview(m)} className="cursor-pointer w-full h-full">
                           <img src={m.url} alt={m.name || `Foto ${i+1}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        </a>
+                        </div>
                       ) : (
                         <video src={m.url} controls className="w-full h-full object-cover bg-black" />
                       )}
@@ -962,6 +981,21 @@ export const OrdersView = ({
           customerId={viewCustomerId}
           onClose={() => setViewCustomerId(null)}
         />
+      )}
+
+      {selectedMediaPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedMediaPreview(null)}>
+          <div className="relative max-w-5xl w-full max-h-[90vh] flex flex-col items-center justify-center">
+            <button onClick={() => setSelectedMediaPreview(null)} className="absolute -top-12 right-0 text-white hover:text-red-400 p-2">
+              <X className="size-8" />
+            </button>
+            {selectedMediaPreview.type === 'image' ? (
+              <img src={selectedMediaPreview.url} alt="Preview" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+            ) : (
+              <video src={selectedMediaPreview.url} controls autoPlay className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
