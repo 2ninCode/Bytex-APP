@@ -22,6 +22,7 @@ import { OrdersView } from './views/OrdersView';
 import { CalculatorView } from './views/CalculatorView';
 import { SettingsView } from './views/SettingsView';
 import { StatusTrackerView } from './views/StatusTrackerView';
+import { SalesReportView } from './views/SalesReportView';
 
 // Modals
 import { OrderFormModal } from './components/modals/OrderFormModal';
@@ -334,13 +335,20 @@ export default function App() {
 
   const handleUpdateOrderStatus = async (id: string, status: OrderStatus) => {
     if (!supabase) return;
+
+    const existingOrder = orders.find(o => o.id === id);
+    const statusChanged = existingOrder && existingOrder.status !== status;
+
     await supabase.from('orders').update({ status }).eq('id', id);
     refreshOrders();
-    const statusMap: Record<OrderStatus, string> = {
-      budget: 'Orçamento', approval: 'Aguardando Aprovação',
-      in_progress: 'Em Reparo', ready: 'Pronto para Entrega', finished: 'Finalizado'
-    };
-    sendAutomatedNotification('Status Atualizado', `A ordem #${id} avançou para ${statusMap[status]}!`, 'success', null, id);
+
+    if (statusChanged) {
+      const statusMap: Record<OrderStatus, string> = {
+        budget: 'Orçamento', approval: 'Aguardando Aprovação',
+        in_progress: 'Em Reparo', ready: 'Pronto para Entrega', finished: 'Finalizado'
+      };
+      sendAutomatedNotification('Status Atualizado', `A ordem #${id} avançou para ${statusMap[status]}!`, 'success', null, id);
+    }
   };
 
   const handleDeleteOrder = async (id: string) => {
@@ -525,6 +533,14 @@ export default function App() {
                 onRefreshPrices={refreshPrices}
                 onOpenNotifications={() => setShowNotificationsModal(true)}
                 onDeleteOrder={handleDeleteOrder}
+                onNavigate={(path) => navigateTo(path as View)}
+              />
+            )}
+            {currentView === 'sales_report' && (
+              <SalesReportView
+                orders={orders}
+                onDeleteOrder={handleDeleteOrder}
+                onBack={() => setCurrentView('settings')}
               />
             )}
           </motion.div>

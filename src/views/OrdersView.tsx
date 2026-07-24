@@ -149,6 +149,14 @@ export const OrdersView = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'checklist' | 'budget' | 'media' | 'report'>('overview');
   const [uploading, setUploading] = useState(false);
   const [selectedMediaPreview, setSelectedMediaPreview] = useState<MediaFile | null>(null);
+  
+  // List Filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [listStatusFilter, setListStatusFilter] = useState<'active' | 'finished' | 'all'>('active');
+
+  // Finishing Animation States
+  const [finishingCountdown, setFinishingCountdown] = useState<number | null>(null);
+  const [isFinishedAnimated, setIsFinishedAnimated] = useState(false);
 
   // Form para nova peça
   const [newBudgetItem, setNewBudgetItem] = useState({ name: '', link: '', price: '' });
@@ -172,8 +180,28 @@ export const OrdersView = ({
     });
   };
 
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (finishingCountdown !== null && finishingCountdown > 0) {
+      timer = setTimeout(() => {
+        setFinishingCountdown(prev => (prev !== null ? prev - 1 : null));
+      }, 1000);
+    } else if (finishingCountdown === 0) {
+      setFinishingCountdown(null);
+      setIsFinishedAnimated(true);
+      if (selectedOrder) {
+        onUpdateStatus(selectedOrder.id, 'finished');
+      }
+      setTimeout(() => {
+        setIsFinishedAnimated(false);
+        onBack();
+      }, 2000);
+    }
+    return () => clearTimeout(timer);
+  }, [finishingCountdown, selectedOrder, onUpdateStatus, onBack]);
+
   // Live Update de qualquer campo da Ordem de Serviço
-  const handleUpdateOrderField = async (field: string, val: any) => {
+  const handleUpdateOrderField = async (field: keyof Order, val: any) => {
     if (!selectedOrder || !supabase) return;
     const { error } = await supabase.from('orders').update({ [field]: val }).eq('id', selectedOrder.id);
     if (error) {
@@ -282,31 +310,66 @@ export const OrdersView = ({
   };
 
   if (!selectedOrderId || !selectedOrder) {
+    const filteredListOrders = orders.filter(o => {
+      const searchMatch = !searchQuery || 
+        o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        o.device.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        o.id.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      if (listStatusFilter === 'active') return searchMatch && o.status !== 'finished';
+      if (listStatusFilter === 'finished') return searchMatch && o.status === 'finished';
+      return searchMatch;
+    });
+
     return (
       <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900">
-        <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10 flex items-center justify-between">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ordens de Serviço</h2>
-          {currentUser.role !== 'funcionario' && (
-            <Button onClick={onAdd} className="py-2.5 px-4 text-xs font-bold uppercase tracking-wider">
-              <Plus className="w-4 h-4 mr-1" /> Nova Ordem
-            </Button>
-          )}
+        <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ordens de Serviço</h2>
+            {currentUser.role !== 'funcionario' && (
+              <Button onClick={onAdd} className="py-2 px-4 text-xs font-bold uppercase tracking-wider">
+                <Plus className="w-4 h-4 mr-1" /> Nova Ordem
+              </Button>
+            )}
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Pesquisar por cliente, dispositivo ou OS..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-transparent rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-primary transition-all"
+              />
+            </div>
+            <select
+              value={listStatusFilter}
+              onChange={e => setListStatusFilter(e.target.value as any)}
+              className="bg-slate-100 dark:bg-slate-800 py-2 px-4 rounded-xl text-xs font-black text-slate-600 dark:text-slate-300 outline-none focus:ring-2 focus:ring-primary shrink-0"
+            >
+              <option value="active">Em Andamento</option>
+              <option value="finished">Histórico (Finalizadas)</option>
+              <option value="all">Todas as Ordens</option>
+            </select>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto scroll-smooth">
           <div className="p-6 space-y-4 pb-32">
-            {orders.length === 0 ? (
+            {filteredListOrders.length === 0 ? (
               <Card className="p-16 flex flex-col items-center justify-center text-center space-y-4">
                 <div className="size-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300">
                   <ClipboardList className="w-8 h-8" />
                 </div>
                 <div>
                   <p className="font-bold text-slate-500">Nenhuma ordem encontrada</p>
-                  <p className="text-xs text-slate-400">Comece adicionando uma nova ordem.</p>
+                  <p className="text-xs text-slate-400">Altere os filtros ou adicione uma nova ordem.</p>
                 </div>
               </Card>
             ) : (
-              orders.map((o) => (
+              filteredListOrders.map((o) => (
                 <Card
                   key={o.id}
                   onClick={() => onSelect(o.id)}
@@ -385,6 +448,12 @@ export const OrdersView = ({
       return;
     }
     setErrorMessage(null);
+    
+    if (newStatus === 'finished') {
+      setFinishingCountdown(15);
+      return;
+    }
+
     onUpdateStatus(selectedOrder.id, newStatus);
   };
 
@@ -995,6 +1064,53 @@ export const OrdersView = ({
               <video src={selectedMediaPreview.url} controls autoPlay className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
             )}
           </div>
+        </div>
+      )}
+
+      {/* Finishing Animation Overlays */}
+      {finishingCountdown !== null && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center bg-emerald-900/90 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl flex flex-col items-center">
+            <h3 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Finalizando OS...</h3>
+            <p className="text-slate-500 mb-6 font-medium">A OS será movida para o histórico.</p>
+            
+            <div className="relative size-32 mb-8 flex items-center justify-center">
+              <svg className="absolute inset-0 w-full h-full -rotate-90">
+                <circle cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="8" fill="none" className="text-slate-100 dark:text-slate-800" />
+                <circle 
+                  cx="64" cy="64" r="60" 
+                  stroke="currentColor" 
+                  strokeWidth="8" 
+                  fill="none" 
+                  className="text-emerald-500 transition-all duration-1000 ease-linear"
+                  strokeDasharray="377"
+                  strokeDashoffset={377 - (377 * finishingCountdown) / 15}
+                />
+              </svg>
+              <span className="text-4xl font-black text-emerald-600 dark:text-emerald-400">{finishingCountdown}</span>
+            </div>
+            
+            <Button 
+              variant="secondary"
+              className="w-full bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 dark:bg-red-500/10 dark:hover:bg-red-500/20 border-transparent"
+              onClick={() => setFinishingCountdown(null)}
+            >
+              Cancelar Finalização
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {isFinishedAnimated && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center bg-emerald-500">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', bounce: 0.5 }}
+            className="size-40 bg-white rounded-full flex items-center justify-center shadow-2xl"
+          >
+            <Check className="size-20 text-emerald-500" strokeWidth={3} />
+          </motion.div>
         </div>
       )}
     </div>

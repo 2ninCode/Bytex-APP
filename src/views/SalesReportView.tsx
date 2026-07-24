@@ -1,16 +1,18 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, BarChart3, Calendar, TrendingUp, TrendingDown, Target, Package, DollarSign, Download, Filter, Search, Smartphone, Laptop, CheckCircle2, Clock, Trash2, AlertCircle, ArrowLeft } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
-import { cn } from '../ui/utils';
-import { Order, OrderStatus } from '../../types';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { cn } from '../components/ui/utils';
+import { Order, OrderStatus } from '../types';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval, parseISO, startOfMonth, startOfYear, subYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 type Period = '7d' | '30d' | '90d' | 'year' | 'all';
 
@@ -30,20 +32,37 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   finished: 'Finalizado'
 };
 
-export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: { 
+export const SalesReportView = ({ orders, onDeleteOrder, onBack }: { 
   orders: Order[], 
   onDeleteOrder: (id: string) => Promise<void>,
-  onClose: () => void 
+  onBack: () => void 
 }) => {
   const [period, setPeriod] = useState<Period>('30d');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = 'unset'; };
-  }, []);
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, logging: false });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`relatorio-vendas-${format(new Date(), 'dd-MM-yyyy')}.pdf`);
+    } catch (err) {
+      console.error('Erro ao exportar PDF:', err);
+      alert('Não foi possível gerar o PDF. Tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const filteredOrders = useMemo(() => {
     const now = new Date();
@@ -131,23 +150,14 @@ export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-slate-100/80 dark:bg-slate-950/90 backdrop-blur-xl flex flex-col md:p-6" onClick={onClose}>
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        onClick={e => e.stopPropagation()}
-        className="bg-white dark:bg-slate-900 w-full h-full md:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden max-w-7xl mx-auto border border-slate-200/50 dark:border-slate-800"
-      >
-        
-        {/* Compact Header & Top Filters */}
-        <div className="shrink-0 bg-white dark:bg-slate-900 z-20 border-b border-slate-100 dark:border-slate-800">
-          {/* Header Bar */}
-          <div className="px-4 py-3 flex items-center justify-between gap-4">
+    <div className="flex-1 flex flex-col min-h-0 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+      <div ref={reportRef} className="flex-1 flex flex-col min-h-0">
+        {/* Header (Top Bar) */}
+        <div className="p-4 md:px-8 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10 sticky top-0">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <button 
-                onClick={onClose} 
+                onClick={onBack} 
                 className="flex items-center gap-2 px-3 py-2 -ml-2 text-slate-500 hover:text-primary hover:bg-primary/5 rounded-xl transition-all font-bold text-sm group"
               >
                 <ArrowLeft className="size-5 group-hover:-translate-x-1 transition-transform" />
@@ -161,8 +171,8 @@ export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: {
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="secondary" className="h-10 px-4 rounded-xl text-xs gap-2">
-                <Download className="size-4" /> <span className="hidden md:inline">Exportar PDF</span>
+              <Button onClick={handleExportPDF} disabled={isExporting} variant="secondary" className="h-10 px-4 rounded-xl text-xs gap-2">
+                <Download className="size-4" /> <span className="hidden md:inline">{isExporting ? 'Exportando...' : 'Exportar PDF'}</span>
               </Button>
             </div>
           </div>
@@ -453,7 +463,7 @@ export const SalesReportModal = ({ orders, onDeleteOrder, onClose }: {
             </div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </div>
   );
 };

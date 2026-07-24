@@ -9,7 +9,6 @@ import { Card } from '../components/ui/Card';
 import { cn } from '../components/ui/utils';
 import { Employee, Order, Notification, ServicePrice } from '../types';
 import { PriceTableModal } from '../components/modals/PriceTableModal';
-import { SalesReportModal } from '../components/modals/SalesReportModal';
 import { ServiceHistoryModal } from '../components/modals/ServiceHistoryModal';
 import { EmployeeManagementModal } from '../components/modals/EmployeeManagementModal';
 import { SendNotificationModal } from '../components/modals/SendNotificationModal';
@@ -20,7 +19,7 @@ export const SettingsView = ({
   currentUser, employees, onlineEmployees, onRefreshEmployees, onSendNotification, onLogout,
   darkMode, onToggleDark, soundEnabled, onToggleSound, orders,
   lowStockThreshold, onChangeLowStock, servicePrices, onSavePrice,
-  onRefreshPrices, onOpenNotifications, onDeleteOrder
+  onRefreshPrices, onOpenNotifications, onDeleteOrder, onNavigate
 }: {
   currentUser: Employee, employees: Employee[], onlineEmployees: string[], onRefreshEmployees: () => void, onSendNotification: (n: Notification) => void,
   onLogout: () => void, darkMode: boolean, onToggleDark: () => void,
@@ -29,10 +28,10 @@ export const SettingsView = ({
   servicePrices: ServicePrice[], onSavePrice: (id: string, price: number, field?: 'price' | 'price_gamer') => void,
   onRefreshPrices: () => void,
   onOpenNotifications?: () => void,
-  onDeleteOrder: (id: string) => Promise<void>
+  onDeleteOrder: (id: string) => Promise<void>,
+  onNavigate: (path: string) => void
 }) => {
   const [showPriceTable, setShowPriceTable] = useState(false);
-  const [showSalesReport, setShowSalesReport] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -81,7 +80,7 @@ export const SettingsView = ({
       items: [
         { icon: CreditCard, label: "Tabela de Preços", desc: "Valores dos serviços", highlight: true, action: () => setShowPriceTable(true) },
         { icon: Wrench, label: "Gerenciar Serviços", desc: "Criar, editar e excluir", action: () => setShowServiceMgmt(true) },
-        { icon: BarChart3, label: "Relatórios de Vendas", desc: "Resumo financeiro", action: () => setShowSalesReport(true), hide: currentUser.role === 'funcionario' },
+        { icon: BarChart3, label: "Relatórios de Vendas", desc: "Resumo financeiro", action: () => onNavigate('sales_report'), hide: currentUser.role === 'funcionario' },
         { icon: CheckCircle2, label: "Histórico de Serviços", desc: "Ordens concluídas", action: () => setShowHistory(true) },
       ].filter(i => !i.hide)
     },
@@ -111,7 +110,6 @@ export const SettingsView = ({
     <div className="flex-1 flex flex-col min-h-0 relative">
       {showPriceTable && <PriceTableModal prices={servicePrices} onSave={onSavePrice} onClose={() => setShowPriceTable(false)} />}
       {showServiceMgmt && <ServiceManagementModal prices={servicePrices} onClose={() => { setShowServiceMgmt(false); onRefreshPrices(); }} />}
-      {showSalesReport && <SalesReportModal orders={orders} onDeleteOrder={onDeleteOrder} onClose={() => setShowSalesReport(false)} />}
       {showHistory && <ServiceHistoryModal orders={orders} onClose={() => setShowHistory(false)} />}
       {showEmployeeModal && <EmployeeManagementModal employees={employees} onlineEmployees={onlineEmployees} onClose={() => setShowEmployeeModal(false)} onRefresh={onRefreshEmployees} />}
       {showCustomerModal && <CustomerManagementModal onClose={() => setShowCustomerModal(false)} />}

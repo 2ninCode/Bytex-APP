@@ -1,4 +1,4 @@
-export type View = 'login' | 'dashboard' | 'inventory' | 'orders' | 'calculator' | 'settings' | 'status_tracker';
+export type View = 'login' | 'dashboard' | 'inventory' | 'orders' | 'calculator' | 'settings' | 'status_tracker' | 'sales_report';
 
 export type OrderStatus = 'budget' | 'approval' | 'in_progress' | 'ready' | 'finished';
 
